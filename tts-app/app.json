@@ -35,10 +35,10 @@
     }
   ]
     },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
+"web": {
+  "output": "static",
+  "favicon": "./assets/images/favicon.png"
+},
 "plugins": [
   "expo-router",
   [
@@ -56,11 +56,16 @@
   "typedRoutes": true,
   "reactCompiler": true
 },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "62d30469-5c54-4c3c-a4ef-c661b339a25b"
+"extra": {
+  "router": {},
+  "eas": {
+    "build": {
+      "experimental": {
+        "ios": {}
       }
-    }
+    },
+    "projectId": "62d30469-5c54-4c3c-a4ef-c661b339a25b"
+  }
+}
   }
 }
