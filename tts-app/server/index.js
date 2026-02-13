@@ -14,12 +14,13 @@ app.get("/", (_req, res) => res.send("OK"));
 app.post("/tts", async (req, res) => {
   try {
     const text = (req.body?.text || "").toString().trim();
+    const voiceId = (req.body?.voiceId || process.env.ELEVENLABS_VOICE_ID || "").toString();
     if (!text) return res.status(400).json({ error: "Missing text" });
     if (!ELEVENLABS_API_KEY) return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
-    if (!VOICE_ID) return res.status(500).json({ error: "Missing ELEVENLABS_VOICE_ID" });
+    if (!voiceId) return res.status(500).json({ error: "Missing voiceId" });
 
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       {
         method: "POST",
         headers: {
