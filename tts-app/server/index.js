@@ -15,6 +15,8 @@ app.post("/tts", async (req, res) => {
   try {
     const text = (req.body?.text || "").toString().trim();
     const voiceId = (req.body?.voiceId || process.env.ELEVENLABS_VOICE_ID || "").toString();
+    console.log("VOICE ID RECEIVED:", req.body?.voiceId);
+console.log("VOICE ID USED:", voiceId);
     if (!text) return res.status(400).json({ error: "Missing text" });
     if (!ELEVENLABS_API_KEY) return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
     if (!voiceId) return res.status(500).json({ error: "Missing voiceId" });
