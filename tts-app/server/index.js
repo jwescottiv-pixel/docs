@@ -53,6 +53,36 @@ console.log("VOICE ID USED:", voiceId);
 });
 
 const PORT = process.env.PORT || 3000;
+app.get("/voices", async (req, res) => {
+  try {
+    if (!ELEVENLABS_API_KEY)
+      return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
+
+    const r = await fetch("https://api.elevenlabs.io/v1/voices", {
+      headers: { "xi-api-key": ELEVENLABS_API_KEY },
+    });
+
+    const data = await r.json().catch(() => ({}));
+
+    if (!r.ok) {
+      return res.status(r.status).json(data);
+    }
+
+    // Return a clean, UI-friendly shape
+    const voices = (data?.voices || []).map((v) => ({
+      voice_id: v.voice_id,
+      name: v.name,
+      category: v.category,
+      description: v.description,
+      labels: v.labels,
+    }));
+
+    res.json({ voices });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 app.listen(PORT, () => {
   console.log(`TTS server listening on port ${PORT}`);
 });
