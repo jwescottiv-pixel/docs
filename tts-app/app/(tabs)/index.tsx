@@ -1,125 +1,229 @@
-import React, { useMemo, useState } from "react";
-import { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Linking,
+  Alert
+} from "react-native";
 import { useShareIntentContext } from "expo-share-intent";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { fromByteArray } from "base64-js";
 import * as FileSystem from "expo-file-system/legacy";
 import { Audio } from "expo-av";
-import { Alert } from "react-native";
-const BACKEND_TTS_URL =
-  process.env.EXPO_PUBLIC_TTS_URL || "https://docs-production-fdc6.up.railway.app/tts";
+import { fromByteArray } from "base64-js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ScrollView, /* ...other imports... */ } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 export default function TtsScreen() {
-  const [text, setText] = useState("Hello! This should speak.");
- const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
+  const [text, setText] = useState("Hello, this should speak.");
+  const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
+  const [autoPlayOnShare, setAutoPlayOnShare] = useState(false);
+  const [voices, setVoices] = useState<{ voice_id: string; name: string }[]>([]);
 
-useEffect(() => {
-  if (!hasShareIntent) return;
-
-  const incoming = (shareIntent.text ?? "").trim();
-  if (incoming.length > 0) {
-    setText(incoming);
-  }
-
-  resetShareIntent();
-}, [hasShareIntent, shareIntent?.text, resetShareIntent]); 
-  const [status, setStatus] = useState("idle"); // "idle" | "loading" | "playing"
-
-  const canRun = useMemo(() => text.trim().length > 0 && status === "idle", [text, status]);
-const generateAndPlay = async () => {
-  setStatus("loading");
-
+const [autoplayOnShare, setAutoplayOnShare] = useState(false);
+const loadVoices = async () => {
   try {
-    const res = await fetch(BACKEND_TTS_URL, {
+    const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
+    const r = await fetch(`${base}/voices`);
+    const data = await r.json();
+
+    setVoices(
+      (data?.voices || [])
+        .filter((v: any) => v.category === "cloned")
+        .map((v: any) => ({
+          voice_id: v.voice_id,
+          name: v.name,
+        }))
+    );
+  } catch (e) {
+    console.error("Failed to load voices", e);
+  }
+};
+useEffect(() => {
+  (async () => {
+    try {
+      const saved = await AsyncStorage.getItem("autoplayOnShare");
+      if (saved !== null) setAutoplayOnShare(saved === "true");
+    } catch {}
+  })();
+}, []);
+useEffect(() => {
+  (async () => {
+    try {
+      const savedVoice = await AsyncStorage.getItem("voiceId");
+      if (savedVoice) setVoiceId(savedVoice);
+    } catch {}
+  })();
+}, []);
+useEffect(() => {
+  (async () => {
+    try {
+      await AsyncStorage.setItem(
+        "autoplayOnShare",
+        String(autoplayOnShare)
+      );
+    } catch {}
+  })();
+}, [autoplayOnShare]);
+useEffect(() => {
+  (async () => {
+    try {
+      await AsyncStorage.setItem("voiceId", String(voiceId));
+    } catch {}
+  })();
+}, [voiceId]);
+useEffect(() => {
+  loadVoices();
+}, []);
+  const { shareIntent, resetShareIntent } = useShareIntentContext();
+
+  useMemo(() => {
+    if (shareIntent?.text) {
+      setText(shareIntent.text);
+      resetShareIntent();
+    }
+  }, [shareIntent]);
+
+
+const speakText = async () => {
+  try {
+   const response = await fetch(process.env.EXPO_PUBLIC_TTS_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+   body: JSON.stringify(
+  voiceId?.trim() ? { text, voiceId: voiceId.trim() } : { text }
+),
     });
+if (!response.ok) {
+      const raw = await response.text().catch(() => "");
+      let message = raw;
 
-    if (!res.ok) {
-      const msg = await res.text().catch(() => "");
-      throw new Error(`Backend ${res.status}: ${msg}`);
+      // Try to parse Railway/server JSON errors like:
+      // {"detail":{"status":"voice_not_found","message":"..."}}
+      try {
+        const json = JSON.parse(raw);
+        message =
+          json?.detail?.message ||
+          json?.error ||
+          raw ||
+          `Request failed (${response.status})`;
+      } catch {
+        message = raw || `Request failed (${response.status})`;
+      }
+
+      Alert.alert("TTS failed", message);
+      return;
     }
-
-    const buffer = await res.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
+    const bytes = new Uint8Array(await response.arrayBuffer());
     const base64Audio = fromByteArray(bytes);
 
-const dir = ((FileSystem as any).cacheDirectory ?? (FileSystem as any).documentDirectory ?? "") as string;
-const fileUri = dir + "tts.mp3";
+    const fileUri = FileSystem.documentDirectory + "tts.mp3";
+    await FileSystem.writeAsStringAsync(fileUri, base64Audio, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-await FileSystem.writeAsStringAsync(fileUri, base64Audio, {
-  encoding: "base64",
-});
-
-    setStatus("playing");
     const { sound } = await Audio.Sound.createAsync(
       { uri: fileUri },
       { shouldPlay: true }
     );
 
-    sound.setOnPlaybackStatusUpdate((s) => {
-      if ("didJustFinish" in s && s.didJustFinish) {
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if ("didJustFinish" in status && status.didJustFinish) {
         sound.unloadAsync();
-        setStatus("idle");
       }
     });
-  } catch (e: any) {
-    setStatus("idle");
-    Alert.alert(
-      "TTS Error",
-      e?.message ?? "Failed to generate audio."
-    );
-  }
+   } catch (err: any) {
+  console.error("TTS error:", err);
+  Alert.alert("TTS error", err?.message ? String(err.message) : String(err));
+}
+};
+const openElevenLabs = () => {
+  Linking.openURL("https://elevenlabs.io/app/voice-lab");
 };
   return (
     <View style={styles.container}>
       <Text style={styles.title}>TTS App</Text>
-
       <TextInput
         style={styles.input}
         value={text}
         onChangeText={setText}
-        placeholder="Type something to speak…"
-        placeholderTextColor="#666"
         multiline
       />
 
-      <Pressable
-        style={[styles.button, !canRun && styles.disabled]}
-        disabled={!canRun}
-       onPress={generateAndPlay}
-      >
-        <Text style={styles.buttonText}>
-          {status === "loading" ? "Generating…" : status === "playing" ? "Playing…" : "Generate & Play"}
-        </Text>
-      </Pressable>
+      <View style={styles.toggleRow}>
+        <Text>Autoplay when opened from share</Text>
+        <Switch
+          value={autoplayOnShare}
+          onValueChange={setAutoplayOnShare}
+        />
+      </View>
 
-      <Text style={styles.small}>Status: {status}</Text>
-    </View>
-  );
+<Pressable style={styles.button} onPress={speakText}>
+  <Text style={styles.buttonText}>Generate and Play</Text>
+  </Pressable>
+<Pressable style={styles.button} onPress={openElevenLabs}>
+  <Text style={styles.buttonText}>Clone a Voice with ElevenLabs</Text>
+</Pressable>
+<View
+  style={{
+    marginTop: 20,
+  }}
+>
+  <Text>Voice</Text>
+</View>
+<View style={{ borderWidth: 1, borderRadius: 8, marginTop: 8 }}>
+  <Picker
+    selectedValue={voiceId}
+    onValueChange={(v) => setVoiceId(String(v))}
+  >
+    {voices.map((v) => (
+      <Picker.Item
+        key={v.voice_id}
+        label={v.name}
+        value={v.voice_id}
+      />
+    ))}
+</Picker>
+</View>
+
+<Pressable
+  style={[styles.button, { marginTop: 10 }]}
+  onPress={loadVoices}
+>
+  <Text style={styles.buttonText}>Refresh voices</Text>
+</Pressable>
+
+</View>
+);
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "white" },
-  title: { fontSize: 26, fontWeight: "700", marginBottom: 12, color: "black" },
+container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
+title: { fontSize: 24, fontWeight: "700", marginBottom: 12, color: "#111" },
   input: {
-    minHeight: 140,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 12,
-    fontSize: 16,
+    minHeight: 120,
     marginBottom: 12,
-    borderColor: "#ccc",
-    color: "black",
+  },
+  toggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
   },
   button: {
+    backgroundColor: "#333",
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#333",
   },
-  disabled: { opacity: 0.5 },
-  buttonText: { fontSize: 16, fontWeight: "700", color: "black" },
-  small: { marginTop: 12, color: "black" },
+  buttonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
 });
