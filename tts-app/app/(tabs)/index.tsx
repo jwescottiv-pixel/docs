@@ -7,7 +7,8 @@ import {
   StyleSheet,
   Switch,
   Linking,
-  Alert
+  Alert,
+ActivityIndicator
 } from "react-native";
 import { useShareIntentContext } from "expo-share-intent";
 import * as FileSystem from "expo-file-system/legacy";
@@ -19,11 +20,12 @@ import { Picker } from "@react-native-picker/picker";
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
-  const [autoPlayOnShare, setAutoPlayOnShare] = useState(false);
   const [voices, setVoices] = useState<{ voice_id: string; name: string }[]>([]);
 
-const [autoplayOnShare, setAutoplayOnShare] = useState(false);
+  const [autoplayOnShare, setAutoplayOnShare] = useState(false);
+  const [voicesLoading, setVoicesLoading] = useState(false);
 const loadVoices = async () => {
+  setVoicesLoading(true);
   try {
     const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
     const r = await fetch(`${base}/voices`);
@@ -39,6 +41,8 @@ const loadVoices = async () => {
     );
   } catch (e) {
     console.error("Failed to load voices", e);
+  } finally {
+    setVoicesLoading(false);
   }
 };
 useEffect(() => {
@@ -49,7 +53,7 @@ useEffect(() => {
     } catch {}
   })();
 }, []);
-useEffect(() => {
+ useEffect(() => {
   (async () => {
     try {
       const savedVoice = await AsyncStorage.getItem("voiceId");
@@ -57,7 +61,7 @@ useEffect(() => {
     } catch {}
   })();
 }, []);
-useEffect(() => {
+ useEffect(() => {
   (async () => {
     try {
       await AsyncStorage.setItem(
@@ -67,14 +71,14 @@ useEffect(() => {
     } catch {}
   })();
 }, [autoplayOnShare]);
-useEffect(() => {
+  useEffect(() => {
   (async () => {
     try {
       await AsyncStorage.setItem("voiceId", String(voiceId));
     } catch {}
   })();
 }, [voiceId]);
-useEffect(() => {
+  useEffect(() => {
   loadVoices();
 }, []);
   const { shareIntent, resetShareIntent } = useShareIntentContext();
@@ -189,10 +193,17 @@ const openElevenLabs = () => {
 </View>
 
 <Pressable
-  style={[styles.button, { marginTop: 10 }]}
+  style={[
+    styles.button,
+    { marginTop: 10, opacity: voicesLoading ? 0.6 : 1 }
+  ]}
   onPress={loadVoices}
+  disabled={voicesLoading}
 >
+<View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+  {voicesLoading ? <ActivityIndicator size="small" color="#fff" /> : null}
   <Text style={styles.buttonText}>Refresh voices</Text>
+</View>
 </Pressable>
 
 </View>

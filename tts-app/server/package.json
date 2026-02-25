@@ -1,5 +1,6 @@
 {
   "name": "tts-server",
+  "packageManager": "npm@10.8.2",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
