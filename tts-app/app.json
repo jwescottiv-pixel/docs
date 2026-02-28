@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "EarCandy",
-    "slug": "tts-app",
+    "name": "VoiceCandy",
+    "slug": "voicecandy",
     "version": "1.0.0",
     "orientation": "portrait",
   "icon": "./assets/images/earcandy-icon-1024.png",
