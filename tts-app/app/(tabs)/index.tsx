@@ -167,6 +167,28 @@ const openElevenLabs = () => {
 <Pressable style={styles.button} onPress={speakText}>
   <Text style={styles.buttonText}>Generate and Play</Text>
   </Pressable>
+  <Pressable
+  style={[styles.button, { marginTop: 10 }]}
+onPress={async () => {
+  const item = {
+    id: String(Date.now()),
+    text,
+    voiceId,
+    savedAt: Date.now(),
+  };
+
+  const key = "vault_items";
+
+  const existingRaw = await AsyncStorage.getItem(key);
+  const existing = existingRaw ? JSON.parse(existingRaw) : [];
+
+  const next = [item, ...existing];
+
+  await AsyncStorage.setItem(key, JSON.stringify(next));
+}}
+>
+  <Text style={styles.buttonText}>Save to Vault</Text>
+</Pressable>
 <Pressable style={styles.button} onPress={openElevenLabs}>
   <Text style={styles.buttonText}>Clone a Voice with ElevenLabs</Text>
 </Pressable>

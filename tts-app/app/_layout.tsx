@@ -1,18 +1,16 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { useColorScheme } from "react-native";
-import { ShareIntentProvider } from "expo-share-intent";
+import { Tabs } from "expo-router";
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
+export default function TabsLayout() {
   return (
-    <ShareIntentProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-      </ThemeProvider>
-    </ShareIntentProvider>
+    <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs.Screen
+        name="index"
+        options={{ title: "TTS" }}
+      />
+      <Tabs.Screen
+        name="vault"
+        options={{ title: "Vault" }}
+      />
+    </Tabs>
   );
 }
