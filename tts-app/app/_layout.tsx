@@ -1,16 +1,10 @@
-import { Tabs } from "expo-router";
+import { Stack } from "expo-router";
+import { ShareIntentProvider } from "expo-share-intent";
 
-export default function TabsLayout() {
+export default function RootLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
-      <Tabs.Screen
-        name="index"
-        options={{ title: "TTS" }}
-      />
-      <Tabs.Screen
-        name="vault"
-        options={{ title: "Vault" }}
-      />
-    </Tabs>
+    <ShareIntentProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </ShareIntentProvider>
   );
 }

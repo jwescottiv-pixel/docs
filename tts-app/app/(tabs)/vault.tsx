@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { useFocusEffect } from "expo-router";
 type VaultItem = {
   id: string;
   text: string;
@@ -54,9 +54,11 @@ export default function VaultScreen() {
     }
   }, []);
 
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
     loadVault();
-  }, [loadVault]);
+  }, [loadVault])
+);
 
   const confirmDelete = useCallback(
     (id: string) => {

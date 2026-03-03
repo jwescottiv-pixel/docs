@@ -31,14 +31,23 @@ const loadVoices = async () => {
     const r = await fetch(`${base}/voices`);
     const data = await r.json();
 
-    setVoices(
-      (data?.voices || [])
-        .filter((v: any) => v.category === "cloned")
-        .map((v: any) => ({
-          voice_id: v.voice_id,
-          name: v.name,
-        }))
-    );
+   const list =
+  (data?.voices || [])
+    .filter((v: any) => v.category === "cloned")
+    .map((v: any) => ({
+      voice_id: String(v.voice_id),
+      name: String(v.name),
+    }));
+
+setVoices(list);
+
+// Force a valid selection so Picker has a matching value to display
+const nextId =
+list.find((v: { voice_id: string; name: string }) => v.voice_id === voiceId)?.voice_id ?? list[0]?.voice_id ?? "";
+
+if (nextId && nextId !== voiceId) {
+  setVoiceId(nextId);
+}
   } catch (e) {
     console.error("Failed to load voices", e);
   } finally {
@@ -81,24 +90,46 @@ useEffect(() => {
   useEffect(() => {
   loadVoices();
 }, []);
+useEffect(() => {
+  if (!voices.length) return;
+
+  const found = voices.some((v) => v.voice_id === voiceId);
+  if (!found) {
+    setVoiceId(voices[0].voice_id);
+  }
+}, [voices]);
   const { shareIntent, resetShareIntent } = useShareIntentContext();
 
-  useMemo(() => {
-    if (shareIntent?.text) {
-      setText(shareIntent.text);
+useEffect(() => {
+  if (!shareIntent?.text) return;
+
+  const incoming = shareIntent.text;
+  setText(incoming);
+
+  (async () => {
+    try {
+      if (autoplayOnShare) {
+        await speakText(incoming);
+      }
+    } finally {
       resetShareIntent();
     }
-  }, [shareIntent]);
+  })();
+}, [shareIntent?.text, autoplayOnShare]);
 
-
-const speakText = async () => {
+const speakText = async (overrideText?: string) => {
   try {
-   const response = await fetch(process.env.EXPO_PUBLIC_TTS_URL!, {
+    const t = (overrideText ?? text).trim();
+    if (!t) return;
+
+    const response = await fetch(process.env.EXPO_PUBLIC_TTS_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-   body: JSON.stringify(
-  voiceId?.trim() ? { text, voiceId: voiceId.trim() } : { text }
-),
+      body: JSON.stringify(
+        voiceId?.trim()
+          ? { text: t, voiceId: voiceId.trim() }
+          : { text: t }
+      ),
     });
 if (!response.ok) {
       const raw = await response.text().catch(() => "");
@@ -147,8 +178,11 @@ const openElevenLabs = () => {
   Linking.openURL("https://elevenlabs.io/app/voice-lab");
 };
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>TTS App</Text>
+  <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60, paddingBottom: 120, backgroundColor: "#FFF7ED" }}>
+  <View style={styles.card}>
+ <Text style={styles.brandTitle}>VoiceCandy</Text>
+<Text style={styles.brandTagline}>Turn text into voice — instantly.</Text>
+
       <TextInput
         style={styles.input}
         value={text}
@@ -164,7 +198,7 @@ const openElevenLabs = () => {
         />
       </View>
 
-<Pressable style={styles.button} onPress={speakText}>
+<Pressable style={styles.button} onPress={() => speakText()}>
   <Text style={styles.buttonText}>Generate and Play</Text>
   </Pressable>
   <Pressable
@@ -177,7 +211,7 @@ onPress={async () => {
     savedAt: Date.now(),
   };
 
-  const key = "vault_items";
+const key = "vault_items";
 
   const existingRaw = await AsyncStorage.getItem(key);
   const existing = existingRaw ? JSON.parse(existingRaw) : [];
@@ -185,6 +219,7 @@ onPress={async () => {
   const next = [item, ...existing];
 
   await AsyncStorage.setItem(key, JSON.stringify(next));
+  Alert.alert("Saved", "Saved to Vault");
 }}
 >
   <Text style={styles.buttonText}>Save to Vault</Text>
@@ -201,8 +236,14 @@ onPress={async () => {
 </View>
 <View style={{ borderWidth: 1, borderRadius: 8, marginTop: 8 }}>
   <Picker
-    selectedValue={voiceId}
+  selectedValue={
+  voices.some((vv) => vv.voice_id === voiceId)
+    ? voiceId
+    : (voices[0]?.voice_id ?? "")
+}
     onValueChange={(v) => setVoiceId(String(v))}
+   style={{ color: "#111" }}
+  dropdownIconColor="#111" 
   >
     {voices.map((v) => (
       <Picker.Item
@@ -226,15 +267,49 @@ onPress={async () => {
   {voicesLoading ? <ActivityIndicator size="small" color="#fff" /> : null}
   <Text style={styles.buttonText}>Refresh voices</Text>
 </View>
-</Pressable>
+
+   </Pressable>
 
 </View>
+</ScrollView>
 );
 }
 
 const styles = StyleSheet.create({
-container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
-title: { fontSize: 24, fontWeight: "700", marginBottom: 12, color: "#111" },
+  container: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 60,
+    backgroundColor: "#FFF7ED",
+    paddingBottom: 120,
+  },
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+
+  brandTitle: {
+    fontSize: 34,
+    fontWeight: "900",
+    textAlign: "center",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+
+  brandTagline: {
+    fontSize: 14,
+    textAlign: "center",
+    opacity: 0.6,
+    marginBottom: 18,
+  },
+
   input: {
     borderWidth: 1,
     borderRadius: 10,
@@ -242,21 +317,30 @@ title: { fontSize: 24, fontWeight: "700", marginBottom: 12, color: "#111" },
     minHeight: 120,
     marginBottom: 12,
   },
+
   toggleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
   },
-  button: {
-    backgroundColor: "#333",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
+
+button: {
+  backgroundColor: "#FF6B6B",
+  paddingVertical: 16,
+  borderRadius: 18,
+  alignItems: "center",
+  marginTop: 14,
+  shadowColor: "#FF6B6B",
+  shadowOpacity: 0.35,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 6,
+},
+
   buttonText: {
     color: "white",
     fontWeight: "700",
     fontSize: 16,
   },
-});
+}); 
