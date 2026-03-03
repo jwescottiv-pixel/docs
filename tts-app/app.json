@@ -1,10 +1,10 @@
 {
   "expo": {
     "name": "VoiceCandy",
-    "slug": "voicecandy",
+    "slug": "tts-app",
     "version": "1.0.0",
     "orientation": "portrait",
-  "icon": "./assets/images/earcandy-icon-1024.png",
+ "icon": "./assets/VoiceCandy-icon-1024.png",
     "scheme": "ttsapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

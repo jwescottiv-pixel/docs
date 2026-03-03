@@ -8,7 +8,8 @@ import {
   Switch,
   Linking,
   Alert,
-ActivityIndicator
+ActivityIndicator,
+Image
 } from "react-native";
 import { useShareIntentContext } from "expo-share-intent";
 import * as FileSystem from "expo-file-system/legacy";
@@ -17,6 +18,7 @@ import { fromByteArray } from "base64-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScrollView, /* ...other imports... */ } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
@@ -178,10 +180,23 @@ const openElevenLabs = () => {
   Linking.openURL("https://elevenlabs.io/app/voice-lab");
 };
   return (
-  <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60, paddingBottom: 120, backgroundColor: "#FFF7ED" }}>
+  <LinearGradient
+  colors={["#FFF7ED", "#FFE4E6", "#E6F4FE"]}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 1 }}
+  style={{ flex: 1 }}
+>
+<ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60, paddingBottom: 120, backgroundColor: "#FFF7ED" }}>
   <View style={styles.card}>
- <Text style={styles.brandTitle}>VoiceCandy</Text>
-<Text style={styles.brandTagline}>Turn text into voice — instantly.</Text>
+<View style={styles.brandHeader}>
+  <Image
+    source={require("../../assets/images/VoiceCandy-icon-1024.png")}
+    style={styles.brandLogo}
+    resizeMode="contain"
+  />
+  <Text style={styles.brandTitle}>VoiceCandy</Text>
+  <Text style={styles.brandTagline}>Turn text into voice — instantly.</Text>
+</View>
 
       <TextInput
         style={styles.input}
@@ -272,6 +287,7 @@ const key = "vault_items";
 
 </View>
 </ScrollView>
+</LinearGradient>
 );
 }
 
@@ -294,14 +310,27 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
-
-  brandTitle: {
-    fontSize: 34,
-    fontWeight: "900",
-    textAlign: "center",
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
+brandHeader: {
+  alignItems: "center",
+  marginBottom: 14,
+},
+brandLogo: {
+  width: 56,
+  height: 56,
+  marginBottom: 6,
+  borderRadius: 14,
+},
+brandTitle: {
+  fontSize: 36,
+  fontWeight: "900",
+  textAlign: "center",
+  letterSpacing: 1.5,
+  marginBottom: 6,
+  color: "#FF4F8B",
+  textShadowColor: "rgba(255, 75, 140, 0.4)",
+  textShadowOffset: { width: 0, height: 3 },
+  textShadowRadius: 8,
+},
 
   brandTagline: {
     fontSize: 14,
