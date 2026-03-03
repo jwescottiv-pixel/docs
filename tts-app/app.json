@@ -18,7 +18,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-      "foregroundImage": "./assets/EarCandy-icon-1024.png",
+      "foregroundImage": "./assets/VoiceCandy-icon-1024.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -28,7 +28,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.earcandy.ttsapp",
+      "package": "com.voicecandy.ttsapp",
       "intentFilters": [
         {
           "action": "SEND",
@@ -52,7 +52,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/EarCandy-splash-2000.png",
+          "image": "./assets/images/VoiceCandy-splash-2000.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#E6F4FE"
