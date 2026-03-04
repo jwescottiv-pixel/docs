@@ -9,10 +9,16 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_TTS_URL": "https://docs-production-5cde.up.railway.app/tts"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_TTS_URL": "https://docs-production-5cde.up.railway.app/tts"
+      }
     }
   },
   "submit": {

@@ -186,7 +186,7 @@ const openElevenLabs = () => {
   end={{ x: 1, y: 1 }}
   style={{ flex: 1 }}
 >
-<ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60, paddingBottom: 120, backgroundColor: "#FFF7ED" }}>
+<ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60, paddingBottom: 120,}}>
   <View style={styles.card}>
 <View style={styles.brandHeader}>
   <Image
