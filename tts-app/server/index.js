@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
+import multer from "multer";
 
 const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
@@ -81,6 +83,44 @@ app.get("/voices", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+console.log("FORMDATA TYPES:", typeof FormData, typeof Blob);
+app.post("/clone", upload.single("file"), async (req, res) => {
+  try {
+    if (!ELEVENLABS_API_KEY) {
+      return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
+    }
+
+    const file = req.file;
+    const name = req.body?.name || "VoiceCandy Clone";
+
+    if (!file) {
+      return res.status(400).json({ error: "No audio file uploaded" });
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("files", new Blob([file.buffer]), "sample.wav");
+
+    const response = await fetch("https://api.elevenlabs.io/v1/voices/add", {
+      method: "POST",
+      headers: {
+        "xi-api-key": ELEVENLABS_API_KEY,
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json(data);
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("Clone error:", err);
+    res.status(500).json({ error: "Clone failed" });
   }
 });
 app.listen(PORT, () => {
