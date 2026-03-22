@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScrollView, /* ...other imports... */ } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
+import * as DocumentPicker from "expo-document-picker";
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
@@ -176,8 +177,41 @@ if (!response.ok) {
   Alert.alert("TTS error", err?.message ? String(err.message) : String(err));
 }
 };
-const openElevenLabs = () => {
-  Linking.openURL("https://elevenlabs.io/app/voice-lab");
+const openElevenLabs = async () => {
+  try {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "audio/*",
+    });
+
+    if (result.canceled) return;
+
+    const file = result.assets[0];
+
+const formData = new FormData();
+formData.append("name", "VoiceCandy Clone");
+formData.append("file", {
+  uri: file.uri,
+  name: file.name || "sample.m4a",
+  type: file.mimeType || "audio/m4a",
+} as any);
+
+const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
+const response = await fetch(`${base}/clone`, {
+  method: "POST",
+  body: formData,
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+  throw new Error(data?.detail || data?.error || "Clone failed");
+}
+
+Alert.alert("Clone created", data?.name || "Voice cloned successfully");
+  } catch (err) {
+    console.error("Picker error:", err);
+    Alert.alert("Error", "Could not pick file");
+  }
 };
   return (
   <LinearGradient
