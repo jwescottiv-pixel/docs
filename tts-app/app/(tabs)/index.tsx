@@ -98,19 +98,7 @@ useEffect(() => {
     } catch {}
   })();
 }, []);
-useEffect(() => {
-  const testSupabase = async () => {
-    const { data, error } = await supabase.from("profiles").select("*");
 
-    if (error) {
-      Alert.alert("Supabase error", error.message);
-    } else {
-      Alert.alert("Supabase connected", `Rows: ${data?.length ?? 0}`);
-    }
-  };
-
-  testSupabase();
-}, []);
  useEffect(() => {
   (async () => {
     try {
