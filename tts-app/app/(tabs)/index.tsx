@@ -20,6 +20,7 @@ import { ScrollView, /* ...other imports... */ } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
+import { supabase } from "../../lib/supabase";
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
@@ -27,6 +28,30 @@ export default function TtsScreen() {
 
   const [autoplayOnShare, setAutoplayOnShare] = useState(false);
   const [voicesLoading, setVoicesLoading] = useState(false);
+  const [email, setEmail] = useState("");
+const [sendingLink, setSendingLink] = useState(false);
+const sendMagicLink = async () => {
+  try {
+    setSendingLink(true);
+
+const { error } = await supabase.auth.signInWithOtp({
+  email,
+  options: {
+    emailRedirectTo: "ttsapp://login-callback",
+  },
+});
+
+    if (error) {
+      Alert.alert("Login error", error.message);
+    } else {
+      Alert.alert("Check your email", "Magic link sent!");
+    }
+  } catch (err: any) {
+    Alert.alert("Error", String(err));
+  } finally {
+    setSendingLink(false);
+  }
+};
 const loadVoices = async () => {
   setVoicesLoading(true);
   try {
@@ -72,6 +97,19 @@ useEffect(() => {
       if (savedVoice) setVoiceId(savedVoice);
     } catch {}
   })();
+}, []);
+useEffect(() => {
+  const testSupabase = async () => {
+    const { data, error } = await supabase.from("profiles").select("*");
+
+    if (error) {
+      Alert.alert("Supabase error", error.message);
+    } else {
+      Alert.alert("Supabase connected", `Rows: ${data?.length ?? 0}`);
+    }
+  };
+
+  testSupabase();
 }, []);
  useEffect(() => {
   (async () => {
@@ -120,6 +158,23 @@ useEffect(() => {
   })();
 }, [shareIntent?.text, autoplayOnShare]);
 
+useEffect(() => {
+  const handleDeepLink = async (url: string) => {
+    Alert.alert("Login callback hit", url);
+  };
+
+  const subscription = Linking.addEventListener("url", (event) => {
+    handleDeepLink(event.url);
+  });
+
+  Linking.getInitialURL().then((url) => {
+    if (url) handleDeepLink(url);
+  });
+
+  return () => {
+    subscription.remove();
+  };
+}, []);
 const speakText = async (overrideText?: string) => {
   try {
     const t = (overrideText ?? text).trim();
@@ -222,6 +277,39 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
 >
 <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60, paddingBottom: 120,}}>
   <View style={styles.card}>
+  <View style={{ marginBottom: 16 }}>
+  <Text style={{ fontWeight: "600", marginBottom: 6 }}>Email login</Text>
+  <TextInput
+    value={email}
+    onChangeText={setEmail}
+    placeholder="you@example.com"
+    autoCapitalize="none"
+    keyboardType="email-address"
+    style={{
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 10,
+      backgroundColor: "#fff",
+    }}
+  />
+  <Pressable
+    onPress={sendMagicLink}
+    disabled={sendingLink || !email.trim()}
+    style={{
+      backgroundColor: sendingLink || !email.trim() ? "#ccc" : "#8B5CF6",
+      paddingVertical: 12,
+      borderRadius: 10,
+      alignItems: "center",
+    }}
+  >
+    <Text style={{ color: "#fff", fontWeight: "700" }}>
+      {sendingLink ? "Sending..." : "Send Magic Link"}
+    </Text>
+  </Pressable>
+</View>
 <View style={styles.brandHeader}>
   <Image
     source={require("../../assets/images/VoiceCandy-icon-1024.png")}
