@@ -7,29 +7,32 @@ export default function LoginCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    const finishLogin = async () => {
-      try {
-        const url = await Linking.getInitialURL();
-
-        if (!url) {
-          Alert.alert("Login error", "No callback URL found");
-          return;
-        }
-
-        // ✅ Just confirm we got the link
-        Alert.alert("Login successful", "You are now logged in");
-
-        // Give Supabase a moment to store session
-        setTimeout(() => {
-          router.replace("/(tabs)");
-        }, 500);
-
-      } catch (err: any) {
-        Alert.alert("Login error", String(err));
+    const handleUrl = (url: string) => {
+      if (!url) {
+        Alert.alert("Login error", "No callback URL found");
+        return;
       }
+
+      Alert.alert("Login successful", "You are now logged in");
+
+      setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 500);
     };
 
-    finishLogin();
+    // 🔥 Listen for incoming links
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleUrl(event.url);
+    });
+
+    // 🔥 Also handle cold start just in case
+    Linking.getInitialURL().then((url) => {
+      if (url) handleUrl(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   return (
