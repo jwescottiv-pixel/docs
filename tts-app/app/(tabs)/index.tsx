@@ -33,7 +33,10 @@ const [sendingLink, setSendingLink] = useState(false);
 const sendMagicLink = async () => {
   try {
     setSendingLink(true);
-
+if (!supabase) {
+  Alert.alert("Login error", "Supabase is not configured");
+  return;
+}
 const { error } = await supabase.auth.signInWithOtp({
   email,
   options: {
@@ -146,23 +149,7 @@ useEffect(() => {
   })();
 }, [shareIntent?.text, autoplayOnShare]);
 
-useEffect(() => {
-  const handleDeepLink = async (url: string) => {
-    Alert.alert("Login callback hit", url);
-  };
 
-  const subscription = Linking.addEventListener("url", (event) => {
-    handleDeepLink(event.url);
-  });
-
-  Linking.getInitialURL().then((url) => {
-    if (url) handleDeepLink(url);
-  });
-
-  return () => {
-    subscription.remove();
-  };
-}, []);
 const speakText = async (overrideText?: string) => {
   try {
     const t = (overrideText ?? text).trim();
