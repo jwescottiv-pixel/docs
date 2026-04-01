@@ -21,6 +21,7 @@ import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import { supabase } from "../../lib/supabase";
+import { useURL } from "expo-linking";
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
@@ -40,7 +41,7 @@ if (!supabase) {
 const { error } = await supabase.auth.signInWithOtp({
   email,
   options: {
-    emailRedirectTo: "ttsapp://login-callback",
+   emailRedirectTo: "ttsapp://",
   },
 });
 
@@ -53,6 +54,27 @@ const { error } = await supabase.auth.signInWithOtp({
     Alert.alert("Error", String(err));
   } finally {
     setSendingLink(false);
+  }
+};
+const testInsert = async () => {
+  if (!supabase) {
+    Alert.alert("Error", "Supabase not initialized");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("user_voices")
+    .insert([
+      {
+        voice_id: "test_voice",
+        voice_name: "Test Voice",
+      },
+    ]);
+
+  if (error) {
+    Alert.alert("Insert error", error.message);
+  } else {
+    Alert.alert("Success", "Test voice saved!");
   }
 };
 const loadVoices = async () => {
@@ -131,7 +153,42 @@ useEffect(() => {
   }
 }, [voices]);
   const { shareIntent, resetShareIntent } = useShareIntentContext();
+const url = useURL();
+useEffect(() => {
+  const finishLoginFromUrl = async () => {
+    try {
+      if (!url) return;
+      if (!supabase) {
+        Alert.alert("Login error", "Supabase is not configured");
+        return;
+      }
 
+      const hash = url.split("#")[1] || "";
+      const params = new URLSearchParams(hash);
+
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+
+      if (!access_token || !refresh_token) return;
+
+      const { error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (error) {
+        Alert.alert("Login error", error.message);
+        return;
+      }
+
+      Alert.alert("Login successful", "You are now logged in");
+    } catch (err: any) {
+      Alert.alert("Login error", String(err));
+    }
+  };
+
+  finishLoginFromUrl();
+}, [url]);
 useEffect(() => {
   if (!shareIntent?.text) return;
 
@@ -313,6 +370,9 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
 <Pressable style={styles.button} onPress={() => speakText()}>
   <Text style={styles.buttonText}>Generate and Play</Text>
   </Pressable>
+  <Pressable onPress={testInsert} style={styles.button}>
+  <Text style={styles.buttonText}>Test Save Voice</Text>
+</Pressable>
   <Pressable
   style={[styles.button, { marginTop: 10 }]}
 onPress={async () => {
