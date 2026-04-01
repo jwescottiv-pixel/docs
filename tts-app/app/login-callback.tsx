@@ -3,21 +3,16 @@ import { View, Text, Alert } from "react-native";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { supabase } from "../lib/supabase";
-
+import { useURL } from "expo-linking";
 export default function LoginCallback() {
   const router = useRouter();
-
+const url = useURL();
   useEffect(() => {
     const finishLogin = async () => {
       try {
-        const url = await Linking.getInitialURL();
+  if (!url) return;
 
-        if (!url) {
-          Alert.alert("Login error", "No callback URL found");
-          return;
-        }
-
-        if (!supabase) {
+  if (!supabase) {
           Alert.alert("Login error", "Supabase is not configured");
           return;
         }
@@ -51,7 +46,7 @@ export default function LoginCallback() {
     };
 
     finishLogin();
-  }, [router]);
+  }, [router, url]);
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
