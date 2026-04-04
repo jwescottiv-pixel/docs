@@ -31,6 +31,7 @@ export default function TtsScreen() {
   const [voicesLoading, setVoicesLoading] = useState(false);
   const [email, setEmail] = useState("");
 const [sendingLink, setSendingLink] = useState(false);
+const [loggedIn, setLoggedIn] = useState(false);
 const sendMagicLink = async () => {
   try {
     setSendingLink(true);
@@ -108,6 +109,26 @@ if (nextId && nextId !== voiceId) {
   }
 };
 useEffect(() => {
+  if (!supabase) return;
+
+  const checkSession = async () => {
+  const { data } = await supabase!.auth.getSession();
+    setLoggedIn(!!data.session);
+  };
+
+  checkSession();
+
+  const { data: listener } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      setLoggedIn(!!session);
+    }
+  );
+
+  return () => {
+    listener.subscription.unsubscribe();
+  };
+}, []);
+useEffect(() => {
   (async () => {
     try {
       const saved = await AsyncStorage.getItem("autoplayOnShare");
@@ -154,15 +175,12 @@ useEffect(() => {
 }, [voices]);
   const { shareIntent, resetShareIntent } = useShareIntentContext();
 const url = useURL();
+
 useEffect(() => {
+  if (!url || !supabase) return;
+
   const finishLoginFromUrl = async () => {
     try {
-      if (!url) return;
-      if (!supabase) {
-        Alert.alert("Login error", "Supabase is not configured");
-        return;
-      }
-
       const hash = url.split("#")[1] || "";
       const params = new URLSearchParams(hash);
 
@@ -171,7 +189,7 @@ useEffect(() => {
 
       if (!access_token || !refresh_token) return;
 
-      const { error } = await supabase.auth.setSession({
+    const { error } = await supabase!.auth.setSession({
         access_token,
         refresh_token,
       });
@@ -182,6 +200,7 @@ useEffect(() => {
       }
 
       Alert.alert("Login successful", "You are now logged in");
+      setLoggedIn(true);
     } catch (err: any) {
       Alert.alert("Login error", String(err));
     }
@@ -342,6 +361,10 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
     </Text>
   </Pressable>
 </View>
+</View>
+<Text style={{ marginBottom: 16, fontWeight: "600" }}>
+  Login status: {loggedIn ? "Logged in" : "Not logged in"}
+</Text>
 <View style={styles.brandHeader}>
   <Image
     source={require("../../assets/images/VoiceCandy-icon-1024.png")}
@@ -440,9 +463,8 @@ const key = "vault_items";
   <Text style={styles.buttonText}>Refresh voices</Text>
 </View>
 
-   </Pressable>
 
-</View>
+</Pressable>
 </ScrollView>
 </LinearGradient>
 );
