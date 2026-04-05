@@ -22,6 +22,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import { supabase } from "../../lib/supabase";
 import { useURL } from "expo-linking";
+import * as AuthSession from "expo-auth-session";
+import * as Crypto from "expo-crypto";
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
@@ -32,6 +34,7 @@ export default function TtsScreen() {
   const [email, setEmail] = useState("");
 const [sendingLink, setSendingLink] = useState(false);
 const [loggedIn, setLoggedIn] = useState(false);
+const [loadingApple, setLoadingApple] = useState(false);
 const sendMagicLink = async () => {
   try {
     setSendingLink(true);
@@ -57,6 +60,34 @@ const { error } = await supabase.auth.signInWithOtp({
     setSendingLink(false);
   }
 };
+
+const signInWithApple = async () => {
+  try {
+    setLoadingApple(true);
+
+    const redirectUri = AuthSession.makeRedirectUri({
+      scheme: "ttsapp",
+    });
+
+    const response = await supabase!.auth.signInWithOAuth({
+      provider: "apple",
+      options: {
+        redirectTo: redirectUri,
+      },
+    });
+
+    if (response.error) {
+      Alert.alert("Apple login error", response.error.message);
+    }
+  } catch (err: any) {
+    Alert.alert("Apple login error", String(err));
+  } finally {
+    setLoadingApple(false);
+  }
+};
+
+const testInsert = async () => {
+
 const testInsert = async () => {
   if (!supabase) {
     Alert.alert("Error", "Supabase not initialized");
@@ -552,3 +583,4 @@ button: {
     fontSize: 16,
   },
 }); 
+}
