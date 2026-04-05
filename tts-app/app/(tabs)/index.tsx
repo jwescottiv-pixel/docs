@@ -393,6 +393,21 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
   </Pressable>
 </View>
 </View>
+<Pressable
+  onPress={signInWithApple}
+  disabled={loadingApple}
+  style={{
+    backgroundColor: loadingApple ? "#ccc" : "#000",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 16,
+  }}
+>
+  <Text style={{ color: "#fff", fontWeight: "700" }}>
+    {loadingApple ? "Connecting..." : "Continue with Apple"}
+  </Text>
+</Pressable>
 <Text style={{ marginBottom: 16, fontWeight: "600" }}>
   Login status: {loggedIn ? "Logged in" : "Not logged in"}
 </Text>
