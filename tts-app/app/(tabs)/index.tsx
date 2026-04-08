@@ -408,6 +408,9 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
     {loadingApple ? "Connecting..." : "Continue with Apple"}
   </Text>
 </Pressable>
+<Text style={{ color: "red", fontSize: 22, fontWeight: "900", marginBottom: 16 }}>
+  APPLE TEST
+</Text>
 <Text style={{ marginBottom: 16, fontWeight: "600" }}>
   Login status: {loggedIn ? "Logged in" : "Not logged in"}
 </Text>
@@ -440,7 +443,7 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
   <Text style={styles.buttonText}>Generate and Play</Text>
   </Pressable>
   <Pressable onPress={testInsert} style={styles.button}>
-  <Text style={styles.buttonText}>Test Save Voice</Text>
+ <Text style={styles.buttonText}>TEST SAVE VOICE 999</Text>
 </Pressable>
   <Pressable
   style={[styles.button, { marginTop: 10 }]}
