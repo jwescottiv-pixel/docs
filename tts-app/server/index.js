@@ -101,7 +101,10 @@ app.post("/clone", upload.single("file"), async (req, res) => {
 
     const formData = new FormData();
     formData.append("name", name);
-    formData.append("files", new Blob([file.buffer]), "sample.wav");
+formData.append("files", file.buffer, {
+  filename: file.originalname || "sample.wav",
+  contentType: file.mimetype || "audio/mpeg",
+});
 
     const response = await fetch("https://api.elevenlabs.io/v1/voices/add", {
       method: "POST",

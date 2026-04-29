@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase =
-  supabaseUrl && supabaseAnonKey
+  typeof window !== "undefined" && supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
           storage: AsyncStorage,

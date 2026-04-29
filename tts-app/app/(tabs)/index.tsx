@@ -19,11 +19,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ScrollView, /* ...other imports... */ } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
-import * as DocumentPicker from "expo-document-picker";
 import { supabase } from "../../lib/supabase";
-import { useURL } from "expo-linking";
-import * as AuthSession from "expo-auth-session";
-import * as Crypto from "expo-crypto";
+
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
@@ -31,84 +28,78 @@ export default function TtsScreen() {
 
   const [autoplayOnShare, setAutoplayOnShare] = useState(false);
   const [voicesLoading, setVoicesLoading] = useState(false);
-  const [email, setEmail] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 const [sendingLink, setSendingLink] = useState(false);
 const [loggedIn, setLoggedIn] = useState(false);
-const [loadingApple, setLoadingApple] = useState(false);
-const sendMagicLink = async () => {
+const handleLogin = async () => {
   try {
     setSendingLink(true);
-if (!supabase) {
-  Alert.alert("Login error", "Supabase is not configured");
-  return;
-}
-const { error } = await supabase.auth.signInWithOtp({
-  email,
-  options: {
-   emailRedirectTo: "ttsapp://",
-  },
-});
 
-    if (error) {
-      Alert.alert("Login error", error.message);
-    } else {
-      Alert.alert("Check your email", "Magic link sent!");
+    if (!supabase) {
+      Alert.alert("Login error", "Supabase is not configured");
+      return;
     }
+
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Missing info", "Enter email and password");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password.trim(),
+    });
+
+if (error) {
+  if (error.message.toLowerCase().includes("email not confirmed")) {
+    Alert.alert(
+      "Email not confirmed",
+      "Please check your email and confirm your account before logging in."
+    );
+  } else {
+    Alert.alert("Login error", error.message);
+  }
+} else {
+setLoggedIn(true);
+Alert.alert("Success", "Logged in!");
+}
   } catch (err: any) {
     Alert.alert("Error", String(err));
   } finally {
     setSendingLink(false);
   }
 };
-
-const signInWithApple = async () => {
+const handleSignUp = async () => {
   try {
-    setLoadingApple(true);
+    if (!supabase) {
+      Alert.alert("Error", "Supabase not configured");
+      return;
+    }
 
-    const redirectUri = AuthSession.makeRedirectUri({
-      scheme: "ttsapp",
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Missing info", "Enter email and password");
+      return;
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: password.trim(),
     });
 
-    const response = await supabase!.auth.signInWithOAuth({
-      provider: "apple",
-      options: {
-        redirectTo: redirectUri,
-      },
-    });
-
-    if (response.error) {
-      Alert.alert("Apple login error", response.error.message);
+    if (error) {
+      Alert.alert("Sign up error", error.message);
+    } else {
+  Alert.alert(
+  "Check your email",
+  "We sent you a confirmation link. Please confirm your email before logging in."
+);
     }
   } catch (err: any) {
-    Alert.alert("Apple login error", String(err));
-  } finally {
-    setLoadingApple(false);
+    Alert.alert("Error", String(err));
   }
 };
 
-const testInsert = async () => {
-
-const testInsert = async () => {
-  if (!supabase) {
-    Alert.alert("Error", "Supabase not initialized");
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("user_voices")
-    .insert([
-      {
-        voice_id: "test_voice",
-        voice_name: "Test Voice",
-      },
-    ]);
-
-  if (error) {
-    Alert.alert("Insert error", error.message);
-  } else {
-    Alert.alert("Success", "Test voice saved!");
-  }
-};
 const loadVoices = async () => {
   setVoicesLoading(true);
   try {
@@ -116,49 +107,30 @@ const loadVoices = async () => {
     const r = await fetch(`${base}/voices`);
     const data = await r.json();
 
-   const list =
-  (data?.voices || [])
-    .filter((v: any) => v.category === "cloned")
-    .map((v: any) => ({
-      voice_id: String(v.voice_id),
-      name: String(v.name),
-    }));
+    const list =
+      (data?.voices || [])
+        .filter((v: any) => v.category === "cloned")
+        .map((v: any) => ({
+          voice_id: String(v.voice_id),
+          name: String(v.name),
+        }));
 
-setVoices(list);
+    setVoices(list);
 
-// Force a valid selection so Picker has a matching value to display
-const nextId =
-list.find((v: { voice_id: string; name: string }) => v.voice_id === voiceId)?.voice_id ?? list[0]?.voice_id ?? "";
+    const nextId =
+      list.find((v: { voice_id: string; name: string }) => v.voice_id === voiceId)?.voice_id ??
+      list[0]?.voice_id ??
+      "";
 
-if (nextId && nextId !== voiceId) {
-  setVoiceId(nextId);
-}
+    if (nextId && nextId !== voiceId) {
+      setVoiceId(nextId);
+    }
   } catch (e) {
     console.error("Failed to load voices", e);
   } finally {
     setVoicesLoading(false);
   }
 };
-useEffect(() => {
-  if (!supabase) return;
-
-  const checkSession = async () => {
-  const { data } = await supabase!.auth.getSession();
-    setLoggedIn(!!data.session);
-  };
-
-  checkSession();
-
-  const { data: listener } = supabase.auth.onAuthStateChange(
-    (_event, session) => {
-      setLoggedIn(!!session);
-    }
-  );
-
-  return () => {
-    listener.subscription.unsubscribe();
-  };
-}, []);
 useEffect(() => {
   (async () => {
     try {
@@ -205,40 +177,7 @@ useEffect(() => {
   }
 }, [voices]);
   const { shareIntent, resetShareIntent } = useShareIntentContext();
-const url = useURL();
 
-useEffect(() => {
-  if (!url || !supabase) return;
-
-  const finishLoginFromUrl = async () => {
-    try {
-      const hash = url.split("#")[1] || "";
-      const params = new URLSearchParams(hash);
-
-      const access_token = params.get("access_token");
-      const refresh_token = params.get("refresh_token");
-
-      if (!access_token || !refresh_token) return;
-
-    const { error } = await supabase!.auth.setSession({
-        access_token,
-        refresh_token,
-      });
-
-      if (error) {
-        Alert.alert("Login error", error.message);
-        return;
-      }
-
-      Alert.alert("Login successful", "You are now logged in");
-      setLoggedIn(true);
-    } catch (err: any) {
-      Alert.alert("Login error", String(err));
-    }
-  };
-
-  finishLoginFromUrl();
-}, [url]);
 useEffect(() => {
   if (!shareIntent?.text) return;
 
@@ -316,40 +255,14 @@ if (!response.ok) {
 };
 const openElevenLabs = async () => {
   try {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "audio/*",
-    });
-
-    if (result.canceled) return;
-
-    const file = result.assets[0];
-
-const formData = new FormData();
-formData.append("name", "VoiceCandy Clone");
-formData.append("file", {
-  uri: file.uri,
-  name: file.name || "sample.m4a",
-  type: file.mimeType || "audio/m4a",
-} as any);
-
-const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
-const response = await fetch(`${base}/clone`, {
-  method: "POST",
-  body: formData,
-});
-
-const data = await response.json();
-
-if (!response.ok) {
-  throw new Error(data?.detail || data?.error || "Clone failed");
-}
-
-Alert.alert("Clone created", data?.name || "Voice cloned successfully");
+    await Linking.openURL("https://elevenlabs.io/app/voice-lab");
   } catch (err) {
-    console.error("Picker error:", err);
-    Alert.alert("Error", "Could not pick file");
+    console.error("Open ElevenLabs error:", err);
+    Alert.alert("Error", "Could not open ElevenLabs");
   }
 };
+
+
   return (
   <LinearGradient
   colors={["#FFF7ED", "#FFE4E6", "#E6F4FE"]}
@@ -357,10 +270,27 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
   end={{ x: 1, y: 1 }}
   style={{ flex: 1 }}
 >
-<ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 60, paddingBottom: 120,}}>
+<ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16, paddingTop: 36, paddingBottom: 80 }}>
   <View style={styles.card}>
-  <View style={{ marginBottom: 16 }}>
+
+<View style={styles.brandHeader}>
+  <Image
+    source={require("../../assets/images/VoiceCandy-icon-1024.png")}
+    style={styles.brandLogo}
+    resizeMode="contain"
+  />
+<Text style={styles.brandTitle}>VoiceCandy</Text>
+  <Text style={styles.brandTagline}>Turn text into voice — instantly.</Text>
+</View>
+{loggedIn && (
+  <Text style={{ textAlign: "center", marginBottom: 10 }}>
+    Logged in
+  </Text>
+)}
+{!loggedIn && (
+<View style={{ marginBottom: 16 }}>
   <Text style={{ fontWeight: "600", marginBottom: 6 }}>Email login</Text>
+
   <TextInput
     value={email}
     onChangeText={setEmail}
@@ -377,53 +307,54 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
       backgroundColor: "#fff",
     }}
   />
-  <Pressable
-    onPress={sendMagicLink}
-    disabled={sendingLink || !email.trim()}
+
+  <TextInput
+    value={password}
+    onChangeText={setPassword}
+    placeholder="Password"
+    secureTextEntry
     style={{
-      backgroundColor: sendingLink || !email.trim() ? "#ccc" : "#8B5CF6",
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 10,
+      backgroundColor: "#fff",
+    }}
+  />
+
+  <Pressable
+    onPress={handleLogin}
+    disabled={sendingLink || !email.trim() || !password.trim()}
+    style={{
+      backgroundColor:
+        sendingLink || !email.trim() || !password.trim() ? "#ccc" : "#8B5CF6",
       paddingVertical: 12,
       borderRadius: 10,
       alignItems: "center",
     }}
   >
     <Text style={{ color: "#fff", fontWeight: "700" }}>
-      {sendingLink ? "Sending..." : "Send Magic Link"}
+      {sendingLink ? "Logging in..." : "Log In"}
     </Text>
   </Pressable>
-</View>
-</View>
-<Pressable
-  onPress={signInWithApple}
-  disabled={loadingApple}
+  <Pressable
+  onPress={handleSignUp}
   style={{
-    backgroundColor: loadingApple ? "#ccc" : "#000",
+    backgroundColor: "#10B981",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
-    marginBottom: 16,
+    marginTop: 10,
   }}
 >
   <Text style={{ color: "#fff", fontWeight: "700" }}>
-    {loadingApple ? "Connecting..." : "Continue with Apple"}
+    Sign Up
   </Text>
 </Pressable>
-<Text style={{ color: "red", fontSize: 22, fontWeight: "900", marginBottom: 16 }}>
-  APPLE TEST
-</Text>
-<Text style={{ marginBottom: 16, fontWeight: "600" }}>
-  Login status: {loggedIn ? "Logged in" : "Not logged in"}
-</Text>
-<View style={styles.brandHeader}>
-  <Image
-    source={require("../../assets/images/VoiceCandy-icon-1024.png")}
-    style={styles.brandLogo}
-    resizeMode="contain"
-  />
-  <Text style={styles.brandTitle}>VoiceCandy</Text>
-  <Text style={styles.brandTagline}>Turn text into voice — instantly.</Text>
 </View>
-
+)}
       <TextInput
         style={styles.input}
         value={text}
@@ -442,9 +373,7 @@ Alert.alert("Clone created", data?.name || "Voice cloned successfully");
 <Pressable style={styles.button} onPress={() => speakText()}>
   <Text style={styles.buttonText}>Generate and Play</Text>
   </Pressable>
-  <Pressable onPress={testInsert} style={styles.button}>
- <Text style={styles.buttonText}>TEST SAVE VOICE 999</Text>
-</Pressable>
+
   <Pressable
   style={[styles.button, { marginTop: 10 }]}
 onPress={async () => {
@@ -512,8 +441,9 @@ const key = "vault_items";
   <Text style={styles.buttonText}>Refresh voices</Text>
 </View>
 
+   </Pressable>
 
-</Pressable>
+</View>
 </ScrollView>
 </LinearGradient>
 );
@@ -549,11 +479,11 @@ brandLogo: {
   borderRadius: 14,
 },
 brandTitle: {
-  fontSize: 36,
+  fontSize: 30,
   fontWeight: "900",
   textAlign: "center",
   letterSpacing: 1.5,
-  marginBottom: 6,
+  marginBottom: 4,
   color: "#FF4F8B",
   textShadowColor: "rgba(255, 75, 140, 0.4)",
   textShadowOffset: { width: 0, height: 3 },
@@ -601,4 +531,3 @@ button: {
     fontSize: 16,
   },
 }); 
-}
