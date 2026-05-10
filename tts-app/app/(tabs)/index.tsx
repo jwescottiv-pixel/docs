@@ -32,6 +32,14 @@ const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [sendingLink, setSendingLink] = useState(false);
 const [loggedIn, setLoggedIn] = useState(false);
+const [authLoading, setAuthLoading] = useState(true);
+const [messagesUsed, setMessagesUsed] = useState(0);
+const isPremium = false;
+const FREE_MESSAGE_LIMIT = 5;
+const PREMIUM_MESSAGE_LIMIT = 50;
+const MESSAGE_LIMIT = isPremium ? PREMIUM_MESSAGE_LIMIT : FREE_MESSAGE_LIMIT;
+const FREE_PLAN_NAME = "Free";
+const PREMIUM_PLAN_NAME = "VoiceCandy Premium";
 const handleLogin = async () => {
   try {
     setSendingLink(true);
@@ -61,7 +69,6 @@ if (error) {
     Alert.alert("Login error", error.message);
   }
 } else {
-setLoggedIn(true);
 Alert.alert("Success", "Logged in!");
 }
   } catch (err: any) {
@@ -168,6 +175,59 @@ useEffect(() => {
   useEffect(() => {
   loadVoices();
 }, []);
+ const fetchMessageUsage = async () => {
+  try {
+    if (!supabase) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("user_usage")
+      .select("messages_used")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Fetch usage error:", error);
+      return;
+    }
+
+    if (data?.messages_used !== undefined) {
+      setMessagesUsed(Number(data.messages_used || 0));
+    }
+  } catch (err) {
+    console.error("Fetch usage error:", err);
+  }
+};
+useEffect(() => {
+  if (!supabase) {
+    setAuthLoading(false);
+    return;
+  }
+
+  supabase.auth.getSession().then(({ data }) => {
+    setLoggedIn(!!data.session);
+    setAuthLoading(false);
+  });
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+  setLoggedIn(!!session);
+
+  if (session) {
+    fetchMessageUsage();
+  }
+});
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
 useEffect(() => {
   if (!voices.length) return;
 
@@ -195,8 +255,70 @@ useEffect(() => {
   })();
 }, [shareIntent?.text, autoplayOnShare]);
 
+const incrementMessageUsage = async () => {
+ 
+  try {
+    if (!supabase) return;
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data: existing, error: fetchError } = await supabase
+      .from("user_usage")
+      .select("id, messages_used")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Usage fetch error:", fetchError);
+      return;
+    }
+
+    if (!existing) {
+      const { error: insertError } = await supabase
+        .from("user_usage")
+        .insert({
+          user_id: user.id,
+          messages_used: 1,
+        });
+
+      if (insertError) {
+        console.error("Usage insert error:", insertError);
+      }
+
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("user_usage")
+      .update({
+        messages_used: Number(existing.messages_used || 0) + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id);
+
+    if (updateError) {
+      console.error("Usage update error:", updateError);
+    }
+  } catch (err) {
+    console.error("Usage tracking error:", err);
+  }
+};
 const speakText = async (overrideText?: string) => {
+if (!loggedIn) {
+  Alert.alert("Login required", "Please log in to use this feature.");
+  return;
+}  
+if (messagesUsed >= MESSAGE_LIMIT) {
+  Alert.alert(
+    "Limit reached",
+    "You’ve used all your messages for now."
+  );
+  return;
+}  
   try {
     const t = (overrideText ?? text).trim();
     if (!t) return;
@@ -242,6 +364,8 @@ if (!response.ok) {
       { uri: fileUri },
       { shouldPlay: true }
     );
+   await incrementMessageUsage();
+await fetchMessageUsage();
 
     sound.setOnPlaybackStatusUpdate((status) => {
       if ("didJustFinish" in status && status.didJustFinish) {
@@ -252,6 +376,73 @@ if (!response.ok) {
   console.error("TTS error:", err);
   Alert.alert("TTS error", err?.message ? String(err.message) : String(err));
 }
+};
+const handleLogout = async () => {
+  try {
+    if (!supabase) {
+      return;
+    }
+
+    const { error } = await supabase.auth.signOut();
+    setEmail("");
+    setPassword("");
+    if (error) {
+      Alert.alert("Logout error", error.message);
+    }
+  } catch (err: any) {
+    Alert.alert("Logout error", String(err));
+  }
+};
+const handleDeleteAccount = async () => {
+  try {
+    if (!supabase) return;
+
+    Alert.alert(
+      "Delete account",
+      "Are you sure you want to delete your account? This cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
+
+const {
+  data: { session },
+} = await supabase!.auth.getSession();
+
+const response = await fetch(`${base}/delete-account`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${session?.access_token}`,
+  },
+});
+
+const data = await response.json().catch(() => ({}));
+
+if (!response.ok) {
+Alert.alert(
+  "Delete account failed",
+  data?.error || `Server returned ${response.status}`
+);
+  return;
+}
+
+await supabase!.auth.signOut();
+setEmail("");
+setPassword("");
+Alert.alert("Account deleted", "Your account has been removed.");
+          },
+        },
+      ]
+    );
+  } catch (err: any) {
+    Alert.alert("Error", String(err));
+  }
 };
 const openElevenLabs = async () => {
   try {
@@ -283,9 +474,45 @@ const openElevenLabs = async () => {
   <Text style={styles.brandTagline}>Turn text into voice — instantly.</Text>
 </View>
 {loggedIn && (
-  <Text style={{ textAlign: "center", marginBottom: 10 }}>
-    Logged in
+  <View style={{ marginBottom: 10, alignItems: "center" }}>
+    <Text style={{ textAlign: "center", marginBottom: 8 }}>
+      Logged in
+    </Text>
+    <Text style={{ textAlign: "center", marginBottom: 8, fontWeight: "700" }}>
+  Plan: {isPremium ? PREMIUM_PLAN_NAME : FREE_PLAN_NAME}
+</Text>
+Messages used: {messagesUsed} / {MESSAGE_LIMIT}
+<Text style={{ textAlign: "center", marginBottom: 8 }}>
+  Remaining: {Math.max(0, MESSAGE_LIMIT - messagesUsed)}
+</Text>
+    <Pressable
+      onPress={handleLogout}
+      style={{
+        backgroundColor: "#6B7280",
+        paddingVertical: 8,
+        paddingHorizontal: 18,
+        borderRadius: 10,
+      }}
+    >
+      <Text style={{ color: "#fff", fontWeight: "700" }}>
+        Log Out
+      </Text>
+    </Pressable>
+    <Pressable
+  onPress={handleDeleteAccount}
+  style={{
+    backgroundColor: "#DC2626",
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    marginTop: 8,
+  }}
+>
+  <Text style={{ color: "#fff", fontWeight: "700" }}>
+    Delete Account
   </Text>
+</Pressable>
+  </View>
 )}
 {!loggedIn && (
 <View style={{ marginBottom: 16 }}>
@@ -370,10 +597,35 @@ const openElevenLabs = async () => {
         />
       </View>
 
-<Pressable style={styles.button} onPress={() => speakText()}>
-  <Text style={styles.buttonText}>Generate and Play</Text>
+{loggedIn && (
+  <Pressable
+    style={[
+      styles.button,
+      messagesUsed >= MESSAGE_LIMIT ? { opacity: 0.5 } : null,
+    ]}
+    onPress={() => speakText()}
+    disabled={messagesUsed >= MESSAGE_LIMIT}
+  >
+    <Text style={styles.buttonText}>Generate and Play</Text>
   </Pressable>
+)}
 
+{messagesUsed >= MESSAGE_LIMIT && (
+  <Text style={{ textAlign: "center", marginTop: 10, color: "#DC2626" }}>
+  Upgrade to Premium to unlock more messages.
+  </Text>
+)}
+<Pressable
+  style={[
+    styles.button,
+    {
+      marginTop: 10,
+      backgroundColor: "#7C3AED",
+    },
+  ]}
+>
+  <Text style={styles.buttonText}>Upgrade to Premium</Text>
+</Pressable>
   <Pressable
   style={[styles.button, { marginTop: 10 }]}
 onPress={async () => {

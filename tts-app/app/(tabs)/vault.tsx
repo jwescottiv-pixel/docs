@@ -98,12 +98,12 @@ useFocusEffect(
           <Text style={styles.metaValue}>{formatSavedAt(item.savedAt)}</Text>
         </View>
 
-        <View style={styles.metaColRight}>
-          <Text style={styles.metaLabel}>Voice</Text>
-          <Text style={styles.metaValue} numberOfLines={1}>
-            {item.voiceId}
-          </Text>
-        </View>
+ <View style={styles.metaColRight}>
+  <Text style={styles.metaLabel}>Type</Text>
+  <Text style={styles.metaValue} numberOfLines={1}>
+    Saved voice message
+  </Text>
+</View>
       </View>
 
       <View style={styles.actionsRow}>
@@ -114,7 +114,7 @@ useFocusEffect(
             pressed && styles.actionBtnPressed,
           ]}
         >
-          <Text style={styles.actionTextDanger}>Delete</Text>
+        <Text style={styles.actionTextDanger}>Remove</Text>
         </Pressable>
       </View>
     </View>

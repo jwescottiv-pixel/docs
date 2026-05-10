@@ -1,12 +1,14 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-
+import { createClient } from "@supabase/supabase-js";
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
-
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
 const MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_turbo_v2_5";
@@ -101,10 +103,10 @@ app.post("/clone", upload.single("file"), async (req, res) => {
 
     const formData = new FormData();
     formData.append("name", name);
-formData.append("files", file.buffer, {
-  filename: file.originalname || "sample.wav",
-  contentType: file.mimetype || "audio/mpeg",
-});
+    formData.append("files", file.buffer, {
+      filename: file.originalname || "sample.wav",
+      contentType: file.mimetype || "audio/mpeg",
+    });
 
     const response = await fetch("https://api.elevenlabs.io/v1/voices/add", {
       method: "POST",
@@ -124,6 +126,36 @@ formData.append("files", file.buffer, {
   } catch (err) {
     console.error("Clone error:", err);
     res.status(500).json({ error: "Clone failed" });
+  }
+});
+
+app.post("/delete-account", async (req, res) => {
+  try {
+const token = req.headers.authorization?.replace("Bearer ", "");
+
+if (!token) {
+  return res.status(401).json({ error: "Missing auth token" });
+}
+
+const {
+  data: { user },
+  error: userError,
+} = await supabaseAdmin.auth.getUser(token);
+
+if (userError || !user) {
+  return res.status(401).json({ error: "Invalid user" });
+}
+
+const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+
+if (deleteError) {
+  return res.status(500).json({ error: deleteError.message });
+}
+
+return res.json({ success: true });
+  } catch (err) {
+    console.error("Delete account error:", err);
+    return res.status(500).json({ error: "Delete account failed" });
   }
 });
 app.listen(PORT, () => {
