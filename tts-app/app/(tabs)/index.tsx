@@ -414,7 +414,13 @@ const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
 const {
   data: { session },
 } = await supabase!.auth.getSession();
-
+if (!session?.access_token) {
+  Alert.alert(
+    "Delete account failed",
+    "Please log out and log back in, then try again."
+  );
+  return;
+}
 const response = await fetch(`${base}/delete-account`, {
   method: "POST",
   headers: {
