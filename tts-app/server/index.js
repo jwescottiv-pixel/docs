@@ -88,10 +88,26 @@ app.get("/voices", async (req, res) => {
   }
 });
 console.log("FORMDATA TYPES:", typeof FormData, typeof Blob);
+
 app.post("/clone", upload.single("file"), async (req, res) => {
   try {
     if (!ELEVENLABS_API_KEY) {
       return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
+    }
+
+    const token = req.headers.authorization?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({ error: "Missing auth token" });
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid user" });
     }
 
     const file = req.file;
@@ -122,6 +138,18 @@ app.post("/clone", upload.single("file"), async (req, res) => {
       return res.status(response.status).json(data);
     }
 
+    const { error: voiceInsertError } = await supabaseAdmin
+      .from("user_voices")
+      .insert({
+        user_id: user.id,
+        voice_id: data.voice_id,
+        voice_name: data.name || name,
+      });
+
+    if (voiceInsertError) {
+      return res.status(500).json({ error: voiceInsertError.message });
+    }
+
     res.json(data);
   } catch (err) {
     console.error("Clone error:", err);
@@ -131,28 +159,29 @@ app.post("/clone", upload.single("file"), async (req, res) => {
 
 app.post("/delete-account", async (req, res) => {
   try {
-const token = req.headers.authorization?.replace("Bearer ", "");
+    const token = req.headers.authorization?.replace("Bearer ", "");
 
-if (!token) {
-  return res.status(401).json({ error: "Missing auth token" });
-}
+    if (!token) {
+      return res.status(401).json({ error: "Missing auth token" });
+    }
 
-const {
-  data: { user },
-  error: userError,
-} = await supabaseAdmin.auth.getUser(token);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token);
 
-if (userError || !user) {
-  return res.status(401).json({ error: "Invalid user" });
-}
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid user" });
+    }
 
-const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+    const { error: deleteError } =
+      await supabaseAdmin.auth.admin.deleteUser(user.id);
 
-if (deleteError) {
-  return res.status(500).json({ error: deleteError.message });
-}
+    if (deleteError) {
+      return res.status(500).json({ error: deleteError.message });
+    }
 
-return res.json({ success: true });
+    return res.json({ success: true });
   } catch (err) {
     console.error("Delete account error:", err);
     return res.status(500).json({ error: "Delete account failed" });
