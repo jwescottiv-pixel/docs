@@ -451,12 +451,10 @@ Alert.alert("Account deleted", "Your account has been removed.");
   }
 };
 const openElevenLabs = async () => {
-  try {
-    await Linking.openURL("https://elevenlabs.io/app/voice-lab");
-  } catch (err) {
-    console.error("Open ElevenLabs error:", err);
-    Alert.alert("Error", "Could not open ElevenLabs");
-  }
+  Alert.alert(
+    "Private voice cloning",
+    "In-app private voice cloning is being built next. For now, your voices will be linked to your account once cloning is connected."
+  );
 };
 
 
