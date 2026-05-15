@@ -654,7 +654,7 @@ const key = "vault_items";
   <Text style={styles.buttonText}>Save to Vault</Text>
 </Pressable>
 <Pressable style={styles.button} onPress={openElevenLabs}>
-  <Text style={styles.buttonText}>Clone a Voice with ElevenLabs</Text>
+  <Text style={styles.buttonText}>Create Private Voice Clone</Text>
 </Pressable>
 <View
   style={{
