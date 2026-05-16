@@ -13,6 +13,7 @@ Image
 } from "react-native";
 import { useShareIntentContext } from "expo-share-intent";
 import * as FileSystem from "expo-file-system/legacy";
+import * as DocumentPicker from "expo-document-picker";
 import { Audio } from "expo-av";
 import { fromByteArray } from "base64-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,6 +29,7 @@ export default function TtsScreen() {
 const [userOwnedVoicesOnly, setUserOwnedVoicesOnly] = useState(true);
   const [autoplayOnShare, setAutoplayOnShare] = useState(false);
   const [voicesLoading, setVoicesLoading] = useState(false);
+const [cloneLoading, setCloneLoading] = useState(false);
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [sendingLink, setSendingLink] = useState(false);
@@ -459,10 +461,71 @@ Alert.alert("Account deleted", "Your account has been removed.");
   }
 };
 const openElevenLabs = async () => {
-  Alert.alert(
-    "Private voice cloning",
-    "In-app private voice cloning is being built next. For now, your voices will be linked to your account once cloning is connected."
-  );
+  try {
+    const sessionResult = await supabase!.auth.getSession();
+    const session = sessionResult.data.session;
+
+    if (!session?.access_token) {
+      Alert.alert("Login required", "Please log in first.");
+      return;
+    }
+
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["audio/*"],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const file = result.assets?.[0];
+
+    if (!file?.uri) {
+      Alert.alert("Error", "No audio file selected.");
+      return;
+    }
+
+    const base = process.env.EXPO_PUBLIC_TTS_URL?.replace(/\/tts$/, "");
+
+    if (!base) {
+      Alert.alert("Error", "Missing backend URL.");
+      return;
+    }
+
+    setCloneLoading(true);
+
+    const formData = new FormData();
+    formData.append("name", file.name?.replace(/\.[^/.]+$/, "") || "VoiceCandy Clone");
+    formData.append("file", {
+      uri: file.uri,
+      name: file.name || "sample.m4a",
+      type: file.mimeType || "audio/mpeg",
+    } as any);
+
+    const response = await fetch(`${base}/clone`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      Alert.alert("Clone failed", data?.error || `Server returned ${response.status}`);
+      return;
+    }
+
+    Alert.alert("Voice clone created", "Your private voice clone was saved to your account.");
+    await loadVoices();
+  } catch (err: any) {
+    Alert.alert("Clone error", String(err));
+  } finally {
+    setCloneLoading(false);
+  }
 };
 
 
