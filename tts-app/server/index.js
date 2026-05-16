@@ -59,26 +59,34 @@ console.log("VOICE ID USED:", voiceId);
 const PORT = process.env.PORT || 3000;
 app.get("/voices", async (req, res) => {
   try {
-    if (!ELEVENLABS_API_KEY)
-      return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
+    const token = req.headers.authorization?.replace("Bearer ", "");
 
-    const r = await fetch("https://api.elevenlabs.io/v1/voices", {
-      headers: { "xi-api-key": ELEVENLABS_API_KEY },
-    });
-
-    const data = await r.json().catch(() => ({}));
-
-    if (!r.ok) {
-      return res.status(r.status).json(data);
+    if (!token) {
+      return res.status(401).json({ error: "Missing auth token" });
     }
 
-    // Return a clean, UI-friendly shape
-    const voices = (data?.voices || []).map((v) => ({
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid user" });
+    }
+
+    const { data: ownedVoices, error: ownedVoicesError } =
+      await supabaseAdmin
+        .from("user_voices")
+        .select("voice_id, voice_name")
+        .eq("user_id", user.id);
+
+    if (ownedVoicesError) {
+      return res.status(500).json({ error: ownedVoicesError.message });
+    }
+
+    const voices = (ownedVoices || []).map((v) => ({
       voice_id: v.voice_id,
-      name: v.name,
-      category: v.category,
-      description: v.description,
-      labels: v.labels,
+      name: v.voice_name,
     }));
 
     res.json({ voices });

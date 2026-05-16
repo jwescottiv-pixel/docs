@@ -25,7 +25,7 @@ export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
   const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
   const [voices, setVoices] = useState<{ voice_id: string; name: string }[]>([]);
-
+const [userOwnedVoicesOnly, setUserOwnedVoicesOnly] = useState(true);
   const [autoplayOnShare, setAutoplayOnShare] = useState(false);
   const [voicesLoading, setVoicesLoading] = useState(false);
 const [email, setEmail] = useState("");
@@ -111,7 +111,15 @@ const loadVoices = async () => {
   setVoicesLoading(true);
   try {
     const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
-    const r = await fetch(`${base}/voices`);
+const {
+  data: { session },
+} = await supabase!.auth.getSession();
+
+const r = await fetch(`${base}/voices`, {
+  headers: {
+    Authorization: `Bearer ${session?.access_token}`,
+  },
+});
     const data = await r.json();
 
     const list =
