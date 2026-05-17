@@ -126,7 +126,6 @@ const r = await fetch(`${base}/voices`, {
 
     const list =
       (data?.voices || [])
-        .filter((v: any) => v.category === "cloned")
         .map((v: any) => ({
           voice_id: String(v.voice_id),
           name: String(v.name),
