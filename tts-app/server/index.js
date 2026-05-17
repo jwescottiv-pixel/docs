@@ -59,9 +59,14 @@ console.log("VOICE ID USED:", voiceId);
 const PORT = process.env.PORT || 3000;
 app.get("/voices", async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace("Bearer ", "");
+    const authHeader = req.headers.authorization || "";
+    console.log("CLONE AUTH HEADER PRESENT:", Boolean(authHeader));
+    console.log("CLONE AUTH HEADER START:", authHeader.slice(0, 20));
+
+    const token = authHeader.replace("Bearer ", "");
 
     if (!token) {
+      console.log("CLONE AUTH FAILURE: missing token");
       return res.status(401).json({ error: "Missing auth token" });
     }
 
@@ -71,8 +76,11 @@ app.get("/voices", async (req, res) => {
     } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
+      console.log("CLONE AUTH FAILURE:", userError?.message || "No user returned");
       return res.status(401).json({ error: "Invalid user" });
     }
+
+    console.log("CLONE AUTH USER:", user.id);
 
     const { data: ownedVoices, error: ownedVoicesError } =
       await supabaseAdmin
@@ -103,9 +111,14 @@ app.post("/clone", upload.single("file"), async (req, res) => {
       return res.status(500).json({ error: "Missing ELEVENLABS_API_KEY" });
     }
 
-    const token = req.headers.authorization?.replace("Bearer ", "");
+    const authHeader = req.headers.authorization || "";
+    console.log("CLONE AUTH HEADER PRESENT:", Boolean(authHeader));
+    console.log("CLONE AUTH HEADER START:", authHeader.slice(0, 20));
+
+    const token = authHeader.replace("Bearer ", "");
 
     if (!token) {
+      console.log("CLONE AUTH FAILURE: missing token");
       return res.status(401).json({ error: "Missing auth token" });
     }
 
@@ -115,8 +128,11 @@ app.post("/clone", upload.single("file"), async (req, res) => {
     } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
+      console.log("CLONE AUTH FAILURE:", userError?.message || "No user returned");
       return res.status(401).json({ error: "Invalid user" });
     }
+
+    console.log("CLONE AUTH USER:", user.id);
 
     const file = req.file;
     const name = req.body?.name || "VoiceCandy Clone";
@@ -168,9 +184,14 @@ app.post("/clone", upload.single("file"), async (req, res) => {
 
 app.post("/delete-account", async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace("Bearer ", "");
+    const authHeader = req.headers.authorization || "";
+    console.log("CLONE AUTH HEADER PRESENT:", Boolean(authHeader));
+    console.log("CLONE AUTH HEADER START:", authHeader.slice(0, 20));
+
+    const token = authHeader.replace("Bearer ", "");
 
     if (!token) {
+      console.log("CLONE AUTH FAILURE: missing token");
       return res.status(401).json({ error: "Missing auth token" });
     }
 
@@ -180,8 +201,11 @@ app.post("/delete-account", async (req, res) => {
     } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
+      console.log("CLONE AUTH FAILURE:", userError?.message || "No user returned");
       return res.status(401).json({ error: "Invalid user" });
     }
+
+    console.log("CLONE AUTH USER:", user.id);
 
     const { error: deleteError } =
       await supabaseAdmin.auth.admin.deleteUser(user.id);
