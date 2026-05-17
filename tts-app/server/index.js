@@ -160,6 +160,7 @@ app.post("/clone", upload.single("file"), async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
+      console.log("ELEVENLABS CLONE ERROR:", response.status, JSON.stringify(data));
       return res.status(response.status).json(data);
     }
 
