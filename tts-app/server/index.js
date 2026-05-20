@@ -134,6 +134,33 @@ app.post("/clone", upload.single("file"), async (req, res) => {
 
     console.log("CLONE AUTH USER:", user.id);
 
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("clone_limit")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      return res.status(500).json({ error: profileError.message });
+    }
+
+    const cloneLimit = Number(profile?.clone_limit ?? 1);
+
+    const { count: existingCloneCount, error: countError } = await supabaseAdmin
+      .from("user_voices")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (countError) {
+      return res.status(500).json({ error: countError.message });
+    }
+
+    if ((existingCloneCount ?? 0) >= cloneLimit) {
+      return res.status(403).json({
+        error: "Clone limit reached. Upgrade your plan to create more private voices.",
+      });
+    }
+
     const file = req.file;
     const name = req.body?.name || "VoiceCandy Clone";
 
