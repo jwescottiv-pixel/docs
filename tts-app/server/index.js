@@ -154,7 +154,11 @@ app.post("/clone", upload.single("file"), async (req, res) => {
     if (countError) {
       return res.status(500).json({ error: countError.message });
     }
-
+    console.log("CLONE LIMIT CHECK:", {
+  userId: user.id,
+  cloneLimit,
+  existingCloneCount,
+});
     if ((existingCloneCount ?? 0) >= cloneLimit) {
       return res.status(403).json({
         error: "Clone limit reached. Upgrade your plan to create more private voices.",
