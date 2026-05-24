@@ -726,6 +726,26 @@ const key = "vault_items";
 <Pressable style={styles.button} onPress={openElevenLabs}>
   <Text style={styles.buttonText}>Create Private Voice Clone</Text>
 </Pressable>
+<View style={styles.upgradeCard}>
+  <Text style={styles.upgradeTitle}>Upgrade VoiceCandy</Text>
+
+  <Text style={styles.upgradeText}>
+    Your trial includes 1 private voice clone.
+    Upgrade to continue after trial and create more voices.
+  </Text>
+
+  <Pressable
+    style={styles.upgradeButton}
+    onPress={() =>
+      Alert.alert(
+        "Upgrade coming soon",
+        "Paid plans will be connected next."
+      )
+    }
+  >
+    <Text style={styles.upgradeButtonText}>Upgrade</Text>
+  </Pressable>
+</View>
 <View
   style={{
     marginTop: 20,
@@ -856,4 +876,33 @@ button: {
     fontWeight: "700",
     fontSize: 16,
   },
+  upgradeCard: {
+  marginTop: 16,
+  padding: 16,
+  borderRadius: 12,
+  backgroundColor: "#f3f4f6",
+},
+
+upgradeTitle: {
+  fontSize: 18,
+  fontWeight: "600",
+},
+
+upgradeText: {
+  marginTop: 8,
+  color: "#444",
+},
+
+upgradeButton: {
+  marginTop: 12,
+  padding: 12,
+  borderRadius: 8,
+  backgroundColor: "#4f46e5",
+},
+
+upgradeButtonText: {
+  color: "#fff",
+  textAlign: "center",
+  fontWeight: "600",
+},
 }); 
