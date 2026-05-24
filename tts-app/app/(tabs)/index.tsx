@@ -727,12 +727,15 @@ const key = "vault_items";
   <Text style={styles.buttonText}>Create Private Voice Clone</Text>
 </Pressable>
 <View style={styles.upgradeCard}>
-  <Text style={styles.upgradeTitle}>Upgrade VoiceCandy</Text>
+ <Text style={styles.upgradeTitle}>VoiceCandy Plus</Text>
 
-  <Text style={styles.upgradeText}>
-    Your trial includes 1 private voice clone.
-    Upgrade to continue after trial and create more voices.
-  </Text>
+<Text style={styles.upgradeText}>
+  Start with a 7-day trial. Your trial includes 1 private voice clone.
+</Text>
+
+<Text style={styles.upgradeText}>
+  Upgrade to keep using VoiceCandy, create more voices, and save your private voice library.
+</Text>
 
   <Pressable
     style={styles.upgradeButton}
@@ -743,7 +746,7 @@ const key = "vault_items";
       )
     }
   >
-    <Text style={styles.upgradeButtonText}>Upgrade</Text>
+  <Text style={styles.upgradeButtonText}>Start / Continue Plus</Text>
   </Pressable>
 </View>
 <View
