@@ -136,7 +136,7 @@ app.post("/clone", upload.single("file"), async (req, res) => {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("clone_limit")
+      .select("clone_limit, plan, trial_ends_at, subscription_status")
       .eq("id", user.id)
       .single();
 
@@ -145,6 +145,17 @@ app.post("/clone", upload.single("file"), async (req, res) => {
     }
 
     const cloneLimit = Number(profile?.clone_limit ?? 1);
+
+    const trialExpired =
+  profile?.subscription_status === "trial" &&
+  profile?.trial_ends_at &&
+  new Date(profile.trial_ends_at) < new Date();
+
+if (trialExpired) {
+  return res.status(403).json({
+    error: "Your 7-day trial has expired. Please upgrade to continue.",
+  });
+}
 
     const { count: existingCloneCount, error: countError } = await supabaseAdmin
       .from("user_voices")
