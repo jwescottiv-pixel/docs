@@ -144,7 +144,14 @@ app.post("/clone", upload.single("file"), async (req, res) => {
       return res.status(500).json({ error: profileError.message });
     }
 
-const cloneLimit = Number(profile?.clone_limit ?? 1);
+const planCloneLimits = {
+  trial: 1,
+  plus: 3,
+  pro: 10,
+};
+
+const cloneLimit =
+  planCloneLimits[profile?.plan] ?? Number(profile?.clone_limit ?? 1);
 
 const trialExpired =
   profile?.subscription_status === "trial" &&
@@ -172,7 +179,7 @@ if (trialExpired) {
 });
 const isPaidUser =
   profile?.subscription_status === "active";
-  
+
     if ((existingCloneCount ?? 0) >= cloneLimit) {
       return res.status(403).json({
         error: "Clone limit reached. Upgrade your plan to create more private voices.",
