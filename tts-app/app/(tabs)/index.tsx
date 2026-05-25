@@ -21,6 +21,7 @@ import { ScrollView, /* ...other imports... */ } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../../lib/supabase";
+import Purchases from "react-native-purchases";
 
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
@@ -739,12 +740,25 @@ const key = "vault_items";
 
   <Pressable
     style={styles.upgradeButton}
-    onPress={() =>
-      Alert.alert(
-        "Upgrade coming soon",
-        "Paid plans will be connected next."
-      )
-    }
+ onPress={async () => {
+  try {
+    const offerings = await Purchases.getOfferings();
+
+    console.log("REVENUECAT OFFERINGS:", offerings);
+
+    Alert.alert(
+      "RevenueCat Connected",
+      "Offerings loaded successfully."
+    );
+  } catch (err) {
+    console.log("REVENUECAT ERROR:", err);
+
+    Alert.alert(
+      "RevenueCat Error",
+      "Could not load offerings."
+    );
+  }
+}}
   >
   <Text style={styles.upgradeButtonText}>Start / Continue Plus</Text>
   </Pressable>
