@@ -8,6 +8,8 @@ useEffect(() => {
   Purchases.configure({
     apiKey: "test_YhbhHIgFcViNLNfpBcxAyADVxse",
   });
+
+  Purchases.logIn("test-user");
 }, []);
 return (
     <ShareIntentProvider>
