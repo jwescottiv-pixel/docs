@@ -234,7 +234,45 @@ const isPaidUser =
     res.status(500).json({ error: "Clone failed" });
   }
 });
+app.post("/activate-plus-test", async (req, res) => {
+  try {
+ const authHeader = req.headers.authorization || "";
+const token = authHeader.replace("Bearer ", "");
 
+if (!token) {
+  return res.status(401).json({ error: "Missing auth token" });
+}  
+const {
+  data: { user },
+  error: userError,
+} = await supabaseAdmin.auth.getUser(token);
+
+if (userError || !user) {
+  return res.status(401).json({ error: "Invalid user" });
+} 
+const { error: updateError } = await supabaseAdmin
+  .from("profiles")
+  .update({
+    plan: "plus",
+    subscription_status: "active",
+    clone_limit: 3,
+  })
+  .eq("id", user.id);
+if (updateError) {
+  return res.status(500).json({ error: updateError.message });
+}
+
+return res.json({
+  success: true,
+  plan: "plus",
+  subscription_status: "active",
+  clone_limit: 3,
+});
+} catch (err) {
+    console.error("Activate plus test error:", err);
+    return res.status(500).json({ error: "Activate plus failed" });
+  }
+});  
 app.post("/delete-account", async (req, res) => {
   try {
     const authHeader = req.headers.authorization || "";
