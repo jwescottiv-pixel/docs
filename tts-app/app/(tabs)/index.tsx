@@ -757,9 +757,32 @@ if (!availablePackage) {
   return;
 }
 
+const sessionResult = await supabase!.auth.getSession();
+const session = sessionResult.data.session;
+const base = process.env.EXPO_PUBLIC_TTS_URL?.replace(/\/tts$/, "");
+
+if (!session?.access_token || !base) {
+  Alert.alert("Error", "Please log in again.");
+  return;
+}
+
+const response = await fetch(`${base}/activate-plus-test`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${session.access_token}`,
+  },
+});
+
+const data = await response.json().catch(() => ({}));
+
+if (!response.ok) {
+  Alert.alert("Upgrade failed", data?.error || `Server returned ${response.status}`);
+  return;
+}
+
 Alert.alert(
-  "Subscription found",
-  availablePackage.product.title || "VoiceCandy Plus"
+  "VoiceCandy Plus activated",
+  "Your account now has Plus access for testing."
 );
   } catch (err) {
     console.log("REVENUECAT ERROR:", err);
