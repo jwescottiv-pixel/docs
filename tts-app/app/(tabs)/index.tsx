@@ -746,10 +746,21 @@ const key = "vault_items";
 
     console.log("REVENUECAT OFFERINGS:", offerings);
 
-    Alert.alert(
-      "RevenueCat Connected",
-      "Offerings loaded successfully."
-    );
+    const currentOffering = offerings.current;
+const availablePackage = currentOffering?.availablePackages?.[0];
+
+if (!availablePackage) {
+  Alert.alert(
+    "No subscription found",
+    "RevenueCat is connected, but no package is available yet."
+  );
+  return;
+}
+
+Alert.alert(
+  "Subscription found",
+  availablePackage.product.title || "VoiceCandy Plus"
+);
   } catch (err) {
     console.log("REVENUECAT ERROR:", err);
 
