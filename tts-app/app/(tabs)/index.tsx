@@ -462,6 +462,7 @@ Alert.alert("Account deleted", "Your account has been removed.");
 };
 const openElevenLabs = async () => {
   try {
+
     const sessionResult = await supabase!.auth.getSession();
     const session = sessionResult.data.session;
 
@@ -556,6 +557,7 @@ const openElevenLabs = async () => {
     <Text style={{ textAlign: "center", marginBottom: 8, fontWeight: "700" }}>
   Plan: {isPremium ? PREMIUM_PLAN_NAME : FREE_PLAN_NAME}
 </Text>
+
 Messages used: {messagesUsed} / {MESSAGE_LIMIT}
 <Text style={{ textAlign: "center", marginBottom: 8 }}>
   Remaining: {Math.max(0, MESSAGE_LIMIT - messagesUsed)}
@@ -756,7 +758,8 @@ if (!availablePackage) {
   );
   return;
 }
-
+const purchaseResult = await Purchases.purchasePackage(availablePackage as any);
+console.log("REVENUECAT PURCHASE RESULT:", purchaseResult);
 const sessionResult = await supabase!.auth.getSession();
 const session = sessionResult.data.session;
 const base = process.env.EXPO_PUBLIC_TTS_URL?.replace(/\/tts$/, "");
