@@ -760,6 +760,17 @@ if (!availablePackage) {
 }
 const purchaseResult = await Purchases.purchasePackage(availablePackage as any);
 console.log("REVENUECAT PURCHASE RESULT:", purchaseResult);
+const customerInfo = purchaseResult.customerInfo;
+const hasPlus =
+  !!customerInfo.entitlements.active["VoiceCandy Plus"];
+
+if (!hasPlus) {
+  Alert.alert(
+    "Purchase incomplete",
+    "The purchase finished, but Plus access was not confirmed."
+  );
+  return;
+}
 const sessionResult = await supabase!.auth.getSession();
 const session = sessionResult.data.session;
 const base = process.env.EXPO_PUBLIC_TTS_URL?.replace(/\/tts$/, "");
