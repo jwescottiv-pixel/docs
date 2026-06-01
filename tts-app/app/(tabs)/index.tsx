@@ -810,6 +810,31 @@ Alert.alert(
   >
   <Text style={styles.upgradeButtonText}>Start / Continue Plus</Text>
   </Pressable>
+  <Pressable
+  style={styles.restoreButton}
+  onPress={async () => {
+    try {
+      const info = await Purchases.restorePurchases();
+
+      if (info.entitlements.active["VoiceCandy Plus"]) {
+        Alert.alert(
+          "Purchases restored",
+          "Your VoiceCandy Plus access was restored."
+        );
+      } else {
+        Alert.alert(
+          "No active subscription",
+          "We did not find an active VoiceCandy Plus subscription."
+        );
+      }
+    } catch (err) {
+      console.log("RESTORE PURCHASES ERROR:", err);
+      Alert.alert("Restore failed", "Please try again.");
+    }
+  }}
+>
+  <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+</Pressable>
 </View>
 <View
   style={{
@@ -967,6 +992,19 @@ upgradeButton: {
 
 upgradeButtonText: {
   color: "#fff",
+  textAlign: "center",
+  fontWeight: "600",
+},
+restoreButton: {
+  marginTop: 10,
+  padding: 12,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: "#4f46e5",
+},
+
+restoreButtonText: {
+  color: "#4f46e5",
   textAlign: "center",
   fontWeight: "600",
 },
