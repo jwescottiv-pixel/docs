@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabase";
 export default function RootLayout() {
 useEffect(() => {
   Purchases.configure({
-    apiKey: "test_YhbhHIgFcViNLNfpBcxAyADVxse",
+    apiKey: "goog_LmlSVgrzUVECfyKPyHIkNeOWFld",
   });
 
 supabase?.auth.getSession().then(({ data }) => {
