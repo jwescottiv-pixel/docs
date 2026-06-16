@@ -177,9 +177,6 @@ if (trialExpired) {
   cloneLimit,
   existingCloneCount,
 });
-const isPaidUser =
-  profile?.subscription_status === "active";
-
     if ((existingCloneCount ?? 0) >= cloneLimit) {
       return res.status(403).json({
         error: "Clone limit reached. Upgrade your plan to create more private voices.",
