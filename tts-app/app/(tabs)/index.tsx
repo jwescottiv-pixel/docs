@@ -817,9 +817,32 @@ Alert.alert(
       const info = await Purchases.restorePurchases();
 
       if (info.entitlements.active["VoiceCandy Plus"]) {
+        const sessionResult = await supabase!.auth.getSession();
+        const session = sessionResult.data.session;
+        const base = process.env.EXPO_PUBLIC_TTS_URL?.replace(/\/tts$/, "");
+
+        if (!session?.access_token || !base) {
+          Alert.alert("Error", "Please log in again.");
+          return;
+        }
+
+        const response = await fetch(`${base}/activate-plus-test`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          Alert.alert("Restore failed", data?.error || `Server returned ${response.status}`);
+          return;
+        }
+
         Alert.alert(
           "Purchases restored",
-          "Your VoiceCandy Plus access was restored."
+          "Your VoiceCandy Plus access was restored and activated."
         );
       } else {
         Alert.alert(
