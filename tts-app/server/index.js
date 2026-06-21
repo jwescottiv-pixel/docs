@@ -146,7 +146,7 @@ app.post("/clone", upload.single("file"), async (req, res) => {
 
 const planCloneLimits = {
   trial: 1,
-  plus: 3,
+  plus: 5,
   pro: 10,
 };
 
