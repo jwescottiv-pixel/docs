@@ -11,7 +11,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_TTS_URL": "https://docs-production-5cde.up.railway.app/tts",
+        "EXPO_PUBLIC_TTS_URL": "https://docs-production-fdc6.up.railway.app/tts",
         "EXPO_PUBLIC_SUPABASE_URL": "https://auzgwqajxbqcrjietnjd.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-KbRHwzZlMZdCwxgBWc_nw_-1HSy8j_"
       }
