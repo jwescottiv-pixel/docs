@@ -516,7 +516,10 @@ const openElevenLabs = async () => {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      Alert.alert("Clone failed", data?.error || `Server returned ${response.status}`);
+    Alert.alert(
+  "Clone failed",
+  `Status: ${response.status}\n\n${JSON.stringify(data, null, 2)}`
+);
       return;
     }
 
@@ -692,20 +695,9 @@ Messages used: {messagesUsed} / {MESSAGE_LIMIT}
   Upgrade to Premium to unlock more messages.
   </Text>
 )}
-<Pressable
-  style={[
-    styles.button,
-    {
-      marginTop: 10,
-      backgroundColor: "#7C3AED",
-    },
-  ]}
->
-  <Text style={styles.buttonText}>Upgrade to Premium</Text>
-</Pressable>
-  <Pressable
+ <Pressable
   style={[styles.button, { marginTop: 10 }]}
-onPress={async () => {
+  onPress={async () => {
   const item = {
     id: String(Date.now()),
     text,
