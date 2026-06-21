@@ -227,9 +227,12 @@ if (trialExpired) {
 
     res.json(data);
   } catch (err) {
-    console.error("Clone error:", err);
-    res.status(500).json({ error: "Clone failed" });
-  }
+  console.error("Clone error:", err);
+  res.status(500).json({
+    error: "Clone failed",
+    details: err?.message || String(err),
+  });
+}
 });
 app.post("/activate-plus-test", async (req, res) => {
   try {
