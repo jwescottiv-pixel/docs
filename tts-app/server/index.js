@@ -15,6 +15,14 @@ const MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_turbo_v2_5";
 
 app.get("/", (_req, res) => res.send("OK"));
 
+app.get("/debug-version", (_req, res) => {
+  res.json({
+    version: "clone-debug-ae243a9",
+    plusLimit: 5,
+    hasCloneDetails: true,
+  });
+});
+
 app.post("/tts", async (req, res) => {
   try {
     const text = (req.body?.text || "").toString().trim();
