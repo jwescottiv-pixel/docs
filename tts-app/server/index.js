@@ -100,12 +100,19 @@ app.get("/voices", async (req, res) => {
       return res.status(500).json({ error: ownedVoicesError.message });
     }
 
-    const voices = (ownedVoices || []).map((v) => ({
-      voice_id: v.voice_id,
-      name: v.voice_name,
-    }));
+const voices = (ownedVoices || []).map((v) => ({
+  voice_id: v.voice_id,
+  name: v.voice_name,
+}));
 
-    res.json({ voices });
+if (voices.length === 0) {
+  voices.push({
+    voice_id: "7iIPfwPJf9Ty5c9blfED",
+    name: "John - Default Voice",
+  });
+}
+
+res.json({ voices });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
