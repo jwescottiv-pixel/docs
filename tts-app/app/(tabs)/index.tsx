@@ -25,7 +25,7 @@ import Purchases from "react-native-purchases";
 
 export default function TtsScreen() {
   const [text, setText] = useState("Hello, this should speak.");
-  const [voiceId, setVoiceId] = useState("zLWoLzezIQShXIP70eGA");
+  const [voiceId, setVoiceId] = useState("");
   const [voices, setVoices] = useState<{ voice_id: string; name: string }[]>([]);
 const [userOwnedVoicesOnly, setUserOwnedVoicesOnly] = useState(true);
   const [autoplayOnShare, setAutoplayOnShare] = useState(false);
@@ -146,6 +146,33 @@ const r = await fetch(`${base}/voices`, {
     console.error("Failed to load voices", e);
   } finally {
     setVoicesLoading(false);
+  }
+};
+const deleteSelectedVoice = async () => {
+  try {
+    const base = process.env.EXPO_PUBLIC_TTS_URL!.replace(/\/tts$/, "");
+    const {
+      data: { session },
+    } = await supabase!.auth.getSession();
+
+    const response = await fetch(`${base}/voices/${voiceId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      Alert.alert("Delete failed", data?.error || `Server returned ${response.status}`);
+      return;
+    }
+
+    Alert.alert("Voice deleted", "The selected voice was deleted.");
+    await loadVoices();
+  } catch (err) {
+    Alert.alert("Delete failed", "Please try again.");
   }
 };
 useEffect(() => {
@@ -878,7 +905,19 @@ Alert.alert(
     ))}
 </Picker>
 </View>
-
+{voiceId ? (
+  <Pressable
+    style={[styles.button, { marginTop: 10, backgroundColor: "#DC2626" }]}
+    onPress={() =>
+  Alert.alert("Delete voice", "Delete selected voice?", [
+    { text: "Cancel", style: "cancel" },
+    { text: "Delete", style: "destructive", onPress: deleteSelectedVoice },
+  ])
+}
+  >
+    <Text style={styles.buttonText}>Delete Selected Voice</Text>
+  </Pressable>
+) : null}
 <Pressable
   style={[
     styles.button,

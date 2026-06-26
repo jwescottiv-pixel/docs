@@ -249,6 +249,59 @@ if (trialExpired) {
   });
 }
 });
+app.delete("/voices/:voiceId", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({ error: "Missing auth token" });
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid user" });
+    }
+
+    const voiceId = req.params.voiceId;
+
+    const elevenResponse = await fetch(
+      `https://api.elevenlabs.io/v1/voices/${voiceId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "xi-api-key": ELEVENLABS_API_KEY,
+        },
+      }
+    );
+
+    if (!elevenResponse.ok) {
+      const data = await elevenResponse.json().catch(() => ({}));
+      return res.status(elevenResponse.status).json(data);
+    }
+
+    const { error: deleteError } = await supabaseAdmin
+      .from("user_voices")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("voice_id", voiceId);
+
+    if (deleteError) {
+      return res.status(500).json({ error: deleteError.message });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({
+      error: "Delete voice failed",
+      details: err?.message || String(err),
+    });
+  }
+});
 app.post("/activate-plus-test", async (req, res) => {
   try {
  const authHeader = req.headers.authorization || "";
