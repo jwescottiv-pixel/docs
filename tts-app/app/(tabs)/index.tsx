@@ -906,7 +906,7 @@ Alert.alert(
     ))}
 </Picker>
 </View>
-{voiceId ? (
+{voiceId && voiceId !== "7iIPfwPJf9Ty5c9blfED" ? (
   <Pressable
     style={[styles.button, { marginTop: 10, backgroundColor: "#DC2626" }]}
     onPress={() =>
