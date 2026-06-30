@@ -170,6 +170,7 @@ const deleteSelectedVoice = async () => {
     }
 
     Alert.alert("Voice deleted", "The selected voice was deleted.");
+    await AsyncStorage.removeItem("voiceId");
     await loadVoices();
   } catch (err) {
     Alert.alert("Delete failed", "Please try again.");
