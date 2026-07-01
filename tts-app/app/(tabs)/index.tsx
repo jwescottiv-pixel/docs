@@ -30,6 +30,12 @@ export default function TtsScreen() {
 const [userOwnedVoicesOnly, setUserOwnedVoicesOnly] = useState(true);
   const [autoplayOnShare, setAutoplayOnShare] = useState(false);
   const [voicesLoading, setVoicesLoading] = useState(false);
+  const [showPlusDetails, setShowPlusDetails] = useState(false);
+<Pressable onPress={() => setShowPlusDetails(!showPlusDetails)}>
+  <Text style={{ color: "#2563EB", marginTop: 6 }}>
+    {showPlusDetails ? "Hide details ▲" : "Show details ▼"}
+  </Text>
+</Pressable> 
 const [cloneLoading, setCloneLoading] = useState(false);
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
@@ -752,13 +758,17 @@ const key = "vault_items";
 <View style={styles.upgradeCard}>
  <Text style={styles.upgradeTitle}>VoiceCandy Plus</Text>
 
-<Text style={styles.upgradeText}>
-  Start with a 7-day trial. Your trial includes 1 private voice clone.
-</Text>
+{showPlusDetails && (
+  <>
+    <Text style={styles.upgradeText}>
+      Start with a 7-day trial. Your trial includes 1 private voice clone.
+    </Text>
 
-<Text style={styles.upgradeText}>
-  Upgrade to keep using VoiceCandy, create more voices, and save your private voice library.
-</Text>
+    <Text style={styles.upgradeText}>
+      Upgrade to keep using VoiceCandy, create more voices, and save your private voice library.
+    </Text>
+  </>
+)}
 
   <Pressable
     style={styles.upgradeButton}
