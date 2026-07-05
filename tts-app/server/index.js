@@ -105,11 +105,13 @@ const voices = (ownedVoices || []).map((v) => ({
   name: v.voice_name,
 }));
 
-if (voices.length === 0) {
-  voices.push({
-    voice_id: "7iIPfwPJf9Ty5c9blfED",
-    name: "John - Default Voice",
-  });
+const defaultVoice = {
+  voice_id: "7iIPfwPJf9Ty5c9blfED",
+  name: "John - Default Voice",
+};
+
+if (!voices.some((v) => v.voice_id === defaultVoice.voice_id)) {
+  voices.unshift(defaultVoice);
 }
 
 res.json({ voices });
