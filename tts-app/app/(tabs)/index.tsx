@@ -263,9 +263,13 @@ useEffect(() => {
   } = supabase.auth.onAuthStateChange((_event, session) => {
   setLoggedIn(!!session);
 
-  if (session) {
-    fetchMessageUsage();
-  }
+if (session) {
+  setMessagesUsed(0);
+  setVoiceId("");
+  setVoices([]);
+  fetchMessageUsage();
+  loadVoices();
+}
 });
 
   return () => {
