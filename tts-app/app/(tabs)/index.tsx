@@ -44,6 +44,23 @@ const [loggedIn, setLoggedIn] = useState(false);
 const [authLoading, setAuthLoading] = useState(true);
 const [messagesUsed, setMessagesUsed] = useState(0);
 const [isPremium, setIsPremium] = useState(false);
+useEffect(() => {
+  const checkPremiumStatus = async () => {
+    try {
+      const customerInfo = await Purchases.getCustomerInfo();
+
+      const hasPlus =
+        !!customerInfo.entitlements.active["VoiceCandy Plus"];
+
+      setIsPremium(hasPlus);
+    } catch (err) {
+      console.log("Premium check error:", err);
+      setIsPremium(false);
+    }
+  };
+
+  checkPremiumStatus();
+}, []);
 const FREE_MESSAGE_LIMIT = 5;
 const PREMIUM_MESSAGE_LIMIT = 50;
 const MESSAGE_LIMIT = isPremium ? PREMIUM_MESSAGE_LIMIT : FREE_MESSAGE_LIMIT;
